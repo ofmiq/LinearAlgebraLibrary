@@ -1,119 +1,225 @@
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+#include "util.h"
 #include "vec.h"
 
-static void test_alloc_free(void) {
-  printf("=== test_alloc_free ===\n");
-  vec_t* v = vec_alloc(3);
-  assert(v != NULL);
-  assert(v->data != NULL);
-  assert(v->n == 3);
-  vec_free(v);
+static void expect_rc(util_error_t rc, util_error_t want, const char* msg) {
+  if (rc != want) {
+    fprintf(stderr, "FAIL: %s — expected %d (%s), got %d (%s)\n", msg,
+            (int)want, util_error_str((int)want), (int)rc,
+            util_error_str((int)rc));
+    exit(EXIT_FAILURE);
+  }
+}
 
-  vec_t* v0 = vec_alloc(0);
-  assert(v0 == NULL);
-  printf("OK\n\n");
+static void expect_double_eq(double a, double b, double eps, const char* msg) {
+  if (fabs(a - b) > eps) {
+    fprintf(stderr, "FAIL: %s — expected %.12g, got %.12g\n", msg, b, a);
+    exit(EXIT_FAILURE);
+  }
+}
+
+static void test_alloc_and_free(void) {
+  printf("TEST: alloc and free\n");
+
+  vec_t* v = NULL;
+  util_error_t rc;
+
+  rc = vec_alloc(&v, 3);
+  expect_rc(rc, ERR_OK, "vec_alloc(3) should succeed");
+  assert(v != NULL && v->data != NULL && v->n == 3);
+
+  rc = vec_free(v);
+  expect_rc(rc, ERR_OK, "vec_free(valid) should return ERR_OK");
+
+  rc = vec_free(NULL);
+  expect_rc(rc, ERR_OK, "vec_free(NULL) should return ERR_OK");
+
+  v = NULL;
+  rc = vec_alloc(&v, 0);
+  expect_rc(rc, ERR_RANGE, "vec_alloc(0) should return ERR_RANGE");
+  assert(v == NULL);
+
+  printf(" OK\n\n");
 }
 
 static void test_set_get(void) {
-  printf("=== test_set_get ===\n");
-  vec_t* v = vec_alloc(3);
-  for (size_t i = 0; i < 3; ++i) vec_set(v, i, i + 1.0);
-  assert(fabs(vec_get(v, 0) - 1.0) < 1e-9);
-  assert(fabs(vec_get(v, 1) - 2.0) < 1e-9);
-  assert(fabs(vec_get(v, 2) - 3.0) < 1e-9);
-  assert(isnan(vec_get(v, 99)));
+  printf("TEST: set/get\n");
+
+  vec_t* v = NULL;
+  util_error_t rc = vec_alloc(&v, 4);
+  expect_rc(rc, ERR_OK, "vec_alloc(4) for set/get");
+  assert(v && v->data);
+
+  rc = vec_set(v, 0, 1.5);
+  expect_rc(rc, ERR_OK, "vec_set(0)");
+  rc = vec_set(v, 3, -2.25);
+  expect_rc(rc, ERR_OK, "vec_set(3)");
+
+  double out;
+  rc = vec_get(v, 0, &out);
+  expect_rc(rc, ERR_OK, "vec_get(0)");
+  expect_double_eq(out, 1.5, 1e-12, "vec_get(0) value");
+
+  rc = vec_get(v, 3, &out);
+  expect_rc(rc, ERR_OK, "vec_get(3)");
+  expect_double_eq(out, -2.25, 1e-12, "vec_get(3) value");
+
+  rc = vec_set(NULL, 0, 1.0);
+  expect_rc(rc, ERR_NULL, "vec_set(NULL) should be ERR_NULL");
+
+  rc = vec_get(NULL, 0, &out);
+  expect_rc(rc, ERR_NULL, "vec_get(NULL, ...) should be ERR_NULL");
+
+  rc = vec_get(v, 99, &out);
+  expect_rc(rc, ERR_RANGE, "vec_get(out-of-range) should be ERR_RANGE");
+
+  rc = vec_get(v, 1, NULL);
+  expect_rc(rc, ERR_NULL, "vec_get(..., NULL out_val) should be ERR_NULL");
 
   vec_free(v);
-  printf("OK\n\n");
+  printf(" OK\n\n");
 }
 
 static void test_add_subtract(void) {
-  printf("=== test_add_subtract ===\n");
-  vec_t* a = vec_alloc(3);
-  vec_t* b = vec_alloc(3);
-  vec_t* out = vec_alloc(3);
+  printf("TEST: add/subtract\n");
+
+  vec_t *a = NULL, *b = NULL, *out = NULL;
+  util_error_t rc;
+
+  rc = vec_alloc(&a, 3);
+  expect_rc(rc, ERR_OK, "alloc a");
+  rc = vec_alloc(&b, 3);
+  expect_rc(rc, ERR_OK, "alloc b");
+  rc = vec_alloc(&out, 3);
+  expect_rc(rc, ERR_OK, "alloc out");
 
   for (size_t i = 0; i < 3; ++i) {
-    vec_set(a, i, i + 1);
-    vec_set(b, i, (i + 1) * 10);
+    rc = vec_set(a, i, (double)(i + 1));
+    expect_rc(rc, ERR_OK, "set a");
+    rc = vec_set(b, i, (double)(i + 1) * 10.0);
+    expect_rc(rc, ERR_OK, "set b");
   }
 
-  vec_add(a, b, out);
-  assert(fabs(vec_get(out, 0) - 11) < 1e-9);
-  assert(fabs(vec_get(out, 1) - 22) < 1e-9);
-  assert(fabs(vec_get(out, 2) - 33) < 1e-9);
+  rc = vec_add(a, b, out);
+  expect_rc(rc, ERR_OK, "vec_add valid");
+  double x;
+  vec_get(out, 0, &x);
+  expect_double_eq(x, 11.0, 1e-12, "add[0]");
+  vec_get(out, 1, &x);
+  expect_double_eq(x, 22.0, 1e-12, "add[1]");
+  vec_get(out, 2, &x);
+  expect_double_eq(x, 33.0, 1e-12, "add[2]");
 
-  vec_subtract(b, a, out);
-  assert(fabs(vec_get(out, 0) - 9) < 1e-9);
-  assert(fabs(vec_get(out, 1) - 18) < 1e-9);
-  assert(fabs(vec_get(out, 2) - 27) < 1e-9);
+  rc = vec_subtract(b, a, out);
+  expect_rc(rc, ERR_OK, "vec_subtract valid");
+  vec_get(out, 0, &x);
+  expect_double_eq(x, 9.0, 1e-12, "sub[0]");
+  vec_get(out, 1, &x);
+  expect_double_eq(x, 18.0, 1e-12, "sub[1]");
+  vec_get(out, 2, &x);
+  expect_double_eq(x, 27.0, 1e-12, "sub[2]");
+
+  vec_t* small = NULL;
+  rc = vec_alloc(&small, 2);
+  expect_rc(rc, ERR_OK, "alloc small");
+  rc = vec_add(a, small, out);
+  expect_rc(rc, ERR_DIM, "vec_add with dim mismatch should be ERR_DIM");
+
+  rc = vec_add(NULL, b, out);
+  expect_rc(rc, ERR_NULL, "vec_add(NULL,...) should be ERR_NULL");
 
   vec_free(a);
   vec_free(b);
   vec_free(out);
-  printf("OK\n\n");
+  vec_free(small);
+
+  printf(" OK\n\n");
 }
 
 static void test_scale_dot(void) {
-  printf("=== test_scale_dot ===\n");
-  vec_t* a = vec_alloc(3);
-  vec_t* out = vec_alloc(3);
+  printf("TEST: scale/dot\n");
+
+  vec_t *a = NULL, *out = NULL;
+  util_error_t rc = vec_alloc(&a, 3);
+  expect_rc(rc, ERR_OK, "alloc a");
+  rc = vec_alloc(&out, 3);
+  expect_rc(rc, ERR_OK, "alloc out");
 
   vec_set(a, 0, 1.0);
   vec_set(a, 1, 2.0);
   vec_set(a, 2, 3.0);
 
-  vec_scale(a, out, 2.0);
-  assert(fabs(vec_get(out, 0) - 2.0) < 1e-9);
-  assert(fabs(vec_get(out, 1) - 4.0) < 1e-9);
-  assert(fabs(vec_get(out, 2) - 6.0) < 1e-9);
+  rc = vec_scale(a, out, 2.0);
+  expect_rc(rc, ERR_OK, "vec_scale valid");
+  double v;
+  vec_get(out, 0, &v);
+  expect_double_eq(v, 2.0, 1e-12, "scale[0]");
+  vec_get(out, 1, &v);
+  expect_double_eq(v, 4.0, 1e-12, "scale[1]");
+  vec_get(out, 2, &v);
+  expect_double_eq(v, 6.0, 1e-12, "scale[2]");
 
-  double dot = vec_dot(a, out);
-  assert(fabs(dot - 28.0) < 1e-9);
+  double dot;
+  rc = vec_dot(a, out, &dot);
+  expect_rc(rc, ERR_OK, "vec_dot valid");
+  expect_double_eq(dot, 28.0, 1e-12, "dot value");
 
-  vec_t* wrong = vec_alloc(2);
-  assert(isnan(vec_dot(a, wrong)));
-  vec_free(wrong);
+  rc = vec_dot(a, out, NULL);
+  expect_rc(rc, ERR_NULL, "vec_dot(NULL out_result) should be ERR_NULL");
+
+  vec_t* short_v = NULL;
+  rc = vec_alloc(&short_v, 2);
+  expect_rc(rc, ERR_OK, "alloc short_v");
+  rc = vec_dot(a, short_v, &dot);
+  expect_rc(rc, ERR_DIM, "vec_dot dim mismatch should be ERR_DIM");
 
   vec_free(a);
   vec_free(out);
-  printf("OK\n\n");
+  vec_free(short_v);
+
+  printf(" OK\n\n");
 }
 
-static void test_print(void) {
-  printf("=== test_print ===\n");
-  vec_t* v = vec_alloc(3);
+static void test_print_behavior(void) {
+  printf("TEST: print\n");
+
+  vec_t* v = NULL;
+  util_error_t rc = vec_alloc(&v, 3);
+  expect_rc(rc, ERR_OK, "alloc for print");
   vec_set(v, 0, 1.1);
   vec_set(v, 1, 2.2);
   vec_set(v, 2, 3.3);
 
-  printf("Expected output: (1.100000, 2.200000, 3.300000)\n");
-  printf("Actual output:   ");
-  vec_print(v);
+  printf("Expected: (1.100000, 2.200000, 3.300000)\n");
+  rc = vec_print(v);
+  expect_rc(rc, ERR_OK, "vec_print valid");
+
+  rc = vec_print(NULL);
+  expect_rc(rc, ERR_NULL, "vec_print(NULL) should be ERR_NULL");
+
+  vec_t tmp = {.n = 3, .data = NULL};
+  rc = vec_print(&tmp);
+  expect_rc(rc, ERR_NULL, "vec_print(invalid data) should be ERR_NULL");
 
   vec_free(v);
-  printf("OK\n\n");
+
+  printf(" OK\n\n");
 }
 
-static void stress_test() {
-  for (int i = 0; i < 100000; ++i) {
-    vec_t* v = vec_alloc(1000);
-    vec_free(v);
-  }
-  printf("Stress test passed.\n");
-}
+int main() {
+  printf("Running vectors_test...\n\n");
 
-int main(void) {
-  printf("Running vector tests...\n\n");
-  test_alloc_free();
+  test_alloc_and_free();
   test_set_get();
   test_add_subtract();
   test_scale_dot();
-  test_print();
-  stress_test();
+  test_print_behavior();
+
   printf("All tests passed.\n");
-  return 0;
+  return EXIT_SUCCESS;
 }
