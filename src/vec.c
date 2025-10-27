@@ -1,24 +1,33 @@
 #include "vec.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 util_error_t vec_alloc(vec_t** out, size_t n) {
   if (out == NULL) {
     return ERR_NULL;
   }
-  *out = NULL;
 
-  if (n == 0 || n > VECTOR_MAX_SIZE) {
+  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
     return ERR_RANGE;
   }
 
-  vec_t* v = (vec_t*)malloc(sizeof(vec_t));
+  vec_t* v = malloc(sizeof *v);
   if (v == NULL) {
     return ERR_ALLOC;
   }
 
-  v->data = (double*)malloc(sizeof(double) * n);
+  v->n = 0;
+  v->data = NULL;
+
+  if (n > SIZE_MAX / sizeof *v->data) {
+    free(v);
+    return ERR_RANGE;
+  }
+
+  v->data = malloc(sizeof *v->data * n);
   if (v->data == NULL) {
     free(v);
     return ERR_ALLOC;
@@ -37,6 +46,61 @@ util_error_t vec_free(vec_t* v) {
 
   free(v->data);
   free(v);
+
+  return ERR_OK;
+}
+
+util_error_t vec_freep(vec_t** vp) {
+  if (vp == NULL) {
+    return ERR_NULL;
+  }
+  if (*vp == NULL) {
+    return ERR_OK;
+  }
+
+  free((*vp)->data);
+  free(*vp);
+  *vp = NULL;
+
+  return ERR_OK;
+}
+
+util_error_t vec_from_array(const double* data, vec_t** out, size_t n) {
+  if (out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
+    return ERR_RANGE;
+  }
+
+  vec_t* v = malloc(sizeof *v);
+  if (v == NULL) {
+    return ERR_ALLOC;
+  }
+
+  v->n = 0;
+  v->data = NULL;
+
+  if (n > SIZE_MAX / sizeof *v->data) {
+    free(v);
+    return ERR_RANGE;
+  }
+
+  v->data = malloc(sizeof *v->data * n);
+  if (v->data == NULL) {
+    free(v);
+    return ERR_ALLOC;
+  }
+
+  memcpy(v->data, data, sizeof *v->data * n);
+
+  v->n = n;
+  *out = v;
 
   return ERR_OK;
 }
@@ -75,6 +139,9 @@ util_error_t vec_add(const vec_t* a, const vec_t* b, vec_t* out) {
   if (a->n != b->n || a->n != out->n) {
     return ERR_DIM;
   }
+  if (out == a || out == b) {
+    return ERR_INVALID_ARG;
+  }
 
   for (size_t i = 0; i < a->n; ++i) {
     out->data[i] = a->data[i] + b->data[i];
@@ -93,6 +160,9 @@ util_error_t vec_subtract(const vec_t* a, const vec_t* b, vec_t* out) {
   if (a->n != b->n || a->n != out->n) {
     return ERR_DIM;
   }
+  if (out == a || out == b) {
+    return ERR_INVALID_ARG;
+  }
 
   for (size_t i = 0; i < a->n; ++i) {
     out->data[i] = a->data[i] - b->data[i];
@@ -110,6 +180,9 @@ util_error_t vec_scale(const vec_t* a, vec_t* out, double scalar) {
   }
   if (a->n != out->n) {
     return ERR_DIM;
+  }
+  if (out == a) {
+    return ERR_INVALID_ARG;
   }
 
   for (size_t i = 0; i < a->n; ++i) {

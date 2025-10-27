@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,8 +11,7 @@
 static void expect_rc(util_error_t rc, util_error_t want, const char* msg) {
   if (rc != want) {
     fprintf(stderr, "FAIL: %s — expected %d (%s), got %d (%s)\n", msg,
-            (int)want, util_error_str((int)want), (int)rc,
-            util_error_str((int)rc));
+            (int)want, util_error_str(want), (int)rc, util_error_str(rc));
     exit(EXIT_FAILURE);
   }
 }
@@ -43,6 +43,12 @@ static void test_alloc_and_free(void) {
   rc = vec_alloc(&v, 0);
   expect_rc(rc, ERR_RANGE, "vec_alloc(0) should return ERR_RANGE");
   assert(v == NULL);
+
+#ifdef VECTOR_MAX_ELEMENTS
+  rc = vec_alloc(&v, (size_t)VECTOR_MAX_ELEMENTS + 1);
+  expect_rc(rc, ERR_RANGE, "vec_alloc(VECTOR_MAX_ELEMENTS+1) -> ERR_RANGE");
+  assert(v == NULL);
+#endif
 
   printf(" OK\n\n");
 }
@@ -211,6 +217,113 @@ static void test_print_behavior(void) {
   printf(" OK\n\n");
 }
 
+static void test_from_array_and_deepcopy(void) {
+  printf("TEST: vec_from_array (deep copy)\n");
+
+  double src[] = {4.4, 5.5, 6.6};
+  vec_t* v = NULL;
+  util_error_t rc = vec_from_array(src, &v, 3);
+  expect_rc(rc, ERR_OK, "vec_from_array valid");
+  assert(v && v->data && v->n == 3);
+
+  double x;
+  rc = vec_get(v, 0, &x);
+  expect_rc(rc, ERR_OK, "vec_get(v,0)");
+  expect_double_eq(x, 4.4, 1e-12, "from_array[0]");
+  rc = vec_get(v, 1, &x);
+  expect_rc(rc, ERR_OK, "vec_get(v,1)");
+  expect_double_eq(x, 5.5, 1e-12, "from_array[1]");
+  rc = vec_get(v, 2, &x);
+  expect_rc(rc, ERR_OK, "vec_get(v,2)");
+  expect_double_eq(x, 6.6, 1e-12, "from_array[2]");
+
+  src[0] = 0.0;
+  rc = vec_get(v, 0, &x);
+  expect_rc(rc, ERR_OK, "vec_get after src modify");
+  expect_double_eq(x, 4.4, 1e-12, "deep copy check");
+
+  rc = vec_from_array(NULL, &v, 3);
+  expect_rc(rc, ERR_NULL, "vec_from_array(NULL,data)");
+  vec_t* tmp = NULL;
+  rc = vec_from_array(src, &tmp, 0);
+  expect_rc(rc, ERR_RANGE, "vec_from_array(0) -> ERR_RANGE");
+  expect_rc(rc, ERR_RANGE, "vec_from_array(0) should be ERR_RANGE");
+
+  vec_free(v);
+
+  printf(" OK\n\n");
+}
+
+static void test_freep_behavior(void) {
+  printf("TEST: vec_freep (free + null)\n");
+
+  vec_t* v = NULL;
+  util_error_t rc = vec_alloc(&v, 2);
+  expect_rc(rc, ERR_OK, "alloc for freep");
+  assert(v != NULL);
+  rc = vec_freep(&v);
+  expect_rc(rc, ERR_OK, "vec_freep should return ERR_OK");
+  assert(v == NULL);
+
+  rc = vec_freep(NULL);
+  expect_rc(rc, ERR_NULL, "vec_freep(NULL) should be ERR_NULL");
+
+  vec_t* nullv = NULL;
+  rc = vec_freep(&nullv);
+  expect_rc(rc, ERR_OK, "vec_freep(&NULL) should be ERR_OK");
+
+  printf(" OK\n\n");
+}
+
+static void test_aliasing_protection(void) {
+  printf("TEST: aliasing protections (out == a or out == b)\n");
+
+  vec_t *a = NULL, *b = NULL, *out = NULL;
+  util_error_t rc;
+
+  rc = vec_alloc(&a, 3);
+  expect_rc(rc, ERR_OK, "alloc a");
+  rc = vec_alloc(&b, 3);
+  expect_rc(rc, ERR_OK, "alloc b");
+  rc = vec_alloc(&out, 3);
+  expect_rc(rc, ERR_OK, "alloc out");
+
+  for (size_t i = 0; i < 3; ++i) {
+    vec_set(a, i, (double)(i + 1));
+    vec_set(b, i, (double)(i + 1) * 2.0);
+  }
+
+  rc = vec_add(a, b, a);
+  expect_rc(rc, ERR_INVALID_ARG, "vec_add out==a should be ERR_INVALID_ARG");
+
+  rc = vec_subtract(a, b, b);
+  expect_rc(rc, ERR_INVALID_ARG,
+            "vec_subtract out==b should be ERR_INVALID_ARG");
+
+  rc = vec_scale(a, a, 3.0);
+  expect_rc(rc, ERR_INVALID_ARG, "vec_scale out==a should be ERR_INVALID_ARG");
+
+  vec_free(a);
+  vec_free(b);
+  vec_free(out);
+
+  printf(" OK\n\n");
+}
+
+static void test_overflow_allocation(void) {
+  printf("TEST: overflow allocation\n");
+
+  vec_t* v = NULL;
+  size_t n_overflow = SIZE_MAX / sizeof(double) + 1u;
+
+  util_error_t rc = vec_alloc(&v, n_overflow);
+  expect_rc(rc, ERR_RANGE,
+            "vec_alloc(SIZE_MAX/sizeof(double)+1) should return ERR_RANGE");
+  assert(v == NULL);
+
+  printf(" OK\n\n");
+}
+
 int main() {
   printf("Running vectors_test...\n\n");
 
@@ -219,6 +332,12 @@ int main() {
   test_add_subtract();
   test_scale_dot();
   test_print_behavior();
+
+  test_from_array_and_deepcopy();
+  test_freep_behavior();
+  test_aliasing_protection();
+
+  test_overflow_allocation();
 
   printf("All tests passed.\n");
   return EXIT_SUCCESS;
