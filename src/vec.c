@@ -1,237 +1,151 @@
 #include "vec.h"
 
-#include <stdint.h>
+#include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-util_error_t vec_alloc(vec_t** out, size_t n) {
-  if (out == NULL) {
-    return ERR_NULL;
+#include "vec_rc.h"
+
+vec_t* vec_alloc(size_t n) {
+  vec_t* v = NULL;
+
+  util_error_t rc = vec_alloc_rc(&v, n);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_alloc(%zu) failed: %s\n", n, util_error_str(rc));
+    return NULL;
   }
 
-  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
-    return ERR_RANGE;
-  }
-
-  vec_t* v = malloc(sizeof *v);
-  if (v == NULL) {
-    return ERR_ALLOC;
-  }
-
-  v->n = 0;
-  v->data = NULL;
-
-  if (n > SIZE_MAX / sizeof *v->data) {
-    free(v);
-    return ERR_RANGE;
-  }
-
-  v->data = malloc(sizeof *v->data * n);
-  if (v->data == NULL) {
-    free(v);
-    return ERR_ALLOC;
-  }
-
-  v->n = n;
-  *out = v;
-
-  return ERR_OK;
+  return v;
 }
 
-util_error_t vec_free(vec_t* v) {
-  if (!v) {
-    return ERR_OK;
+vec_t* vec_from_array(const double* src, size_t n) {
+  vec_t* v = NULL;
+
+  util_error_t rc = vec_from_array_rc(src, &v, n);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_from_array(...,%zu) failed: %s\n", n,
+            util_error_str(rc));
+    return NULL;
   }
 
-  free(v->data);
-  free(v);
-
-  return ERR_OK;
+  return v;
 }
 
-util_error_t vec_freep(vec_t** vp) {
-  if (vp == NULL) {
-    return ERR_NULL;
-  }
-  if (*vp == NULL) {
-    return ERR_OK;
-  }
-
-  free((*vp)->data);
-  free(*vp);
-  *vp = NULL;
-
-  return ERR_OK;
+void vec_free(vec_t* v) {
+  vec_free_rc(v);
 }
 
-util_error_t vec_from_array(const double* data, vec_t** out, size_t n) {
-  if (out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
-    return ERR_RANGE;
-  }
-
-  vec_t* v = malloc(sizeof *v);
-  if (v == NULL) {
-    return ERR_ALLOC;
-  }
-
-  v->n = 0;
-  v->data = NULL;
-
-  if (n > SIZE_MAX / sizeof *v->data) {
-    free(v);
-    return ERR_RANGE;
-  }
-
-  v->data = malloc(sizeof *v->data * n);
-  if (v->data == NULL) {
-    free(v);
-    return ERR_ALLOC;
-  }
-
-  memcpy(v->data, data, sizeof *v->data * n);
-
-  v->n = n;
-  *out = v;
-
-  return ERR_OK;
+void vec_freep(vec_t** vp) {
+  vec_freep_rc(vp);
 }
 
-util_error_t vec_set(vec_t* v, size_t i, double val) {
-  if (v == NULL || v->data == NULL) {
-    return ERR_NULL;
-  }
-  if (i >= v->n) {
-    return ERR_RANGE;
+bool vec_set(vec_t* v, size_t i, double val) {
+  util_error_t rc = vec_set_rc(v, i, val);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_set failed: %s\n", util_error_str(rc));
+    return false;
   }
 
-  v->data[i] = val;
-  return ERR_OK;
+  return true;
 }
 
-util_error_t vec_get(const vec_t* v, size_t i, double* out_val) {
-  if (v == NULL || v->data == NULL || out_val == NULL) {
-    return ERR_NULL;
-  }
-  if (i >= v->n) {
-    return ERR_RANGE;
+double vec_get(const vec_t* v, size_t i) {
+  double out = NAN;
+
+  util_error_t rc = vec_get_rc(v, i, &out);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_get failed: %s\n", util_error_str(rc));
+    return NAN;
   }
 
-  *out_val = v->data[i];
-  return ERR_OK;
+  return out;
 }
 
-util_error_t vec_add(const vec_t* a, const vec_t* b, vec_t* out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || a->n != out->n) {
-    return ERR_DIM;
-  }
-  if (out == a || out == b) {
-    return ERR_INVALID_ARG;
+vec_t* vec_add_new(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_add_new failed: %s\n", util_error_str(ERR_NULL));
+    return NULL;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] + b->data[i];
+  vec_t* result = vec_alloc(a->n);
+  if (result == NULL) {
+    return NULL;
   }
 
-  return ERR_OK;
+  util_error_t rc = vec_add_rc(a, b, result);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_add_new failed: %s\n", util_error_str(rc));
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
 }
 
-util_error_t vec_subtract(const vec_t* a, const vec_t* b, vec_t* out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || a->n != out->n) {
-    return ERR_DIM;
-  }
-  if (out == a || out == b) {
-    return ERR_INVALID_ARG;
+vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_substract_new failed: %s\n", util_error_str(ERR_NULL));
+    return NULL;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] - b->data[i];
+  vec_t* result = vec_alloc(a->n);
+  if (result == NULL) {
+    return NULL;
   }
 
-  return ERR_OK;
+  util_error_t rc = vec_subtract_rc(a, b, result);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_substract_new failed: %s\n", util_error_str(rc));
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
 }
 
-util_error_t vec_scale(const vec_t* a, vec_t* out, double scalar) {
-  if (a == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != out->n) {
-    return ERR_DIM;
-  }
-  if (out == a) {
-    return ERR_INVALID_ARG;
+vec_t* vec_scale_new(const vec_t* a, double scalar) {
+  if (a == NULL) {
+    fprintf(stderr, "vec_scale_new failed: %s\n", util_error_str(ERR_NULL));
+    return NULL;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] * scalar;
+  vec_t* result = vec_alloc(a->n);
+  if (result == NULL) {
+    return NULL;
   }
 
-  return ERR_OK;
+  util_error_t rc = vec_scale_rc(a, result, scalar);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_scale_new failed: %s\n", util_error_str(rc));
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
 }
 
-util_error_t vec_dot(const vec_t* a, const vec_t* b, double* out_result) {
-  if (a == NULL || b == NULL || out_result == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
+double vec_dot(const vec_t* a, const vec_t* b) {
+  double out = NAN;
+  util_error_t rc = vec_dot_rc(a, b, &out);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_dot failed: %s\n", util_error_str(rc));
+    return NAN;
   }
 
-  double result = 0.0;
-  for (size_t i = 0; i < a->n; ++i) {
-    result += a->data[i] * b->data[i];
-  }
-
-  *out_result = result;
-  return ERR_OK;
+  return out;
 }
 
-util_error_t vec_print(const vec_t* v) {
-  if (v == NULL) {
-    printf("(NULL vector)\n");
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    printf("(Invalid data pointer)\n");
-    return ERR_NULL;
-  }
-  if (v->n == 0) {
-    printf("(empty)\n");
-    return ERR_OK;
-  }
+void vec_print(const vec_t* v) {
+  util_error_t rc = vec_print_rc(v);
 
-  printf("(");
-  for (size_t i = 0; i < v->n; ++i) {
-    printf("%.6lf", v->data[i]);
-    if (i < v->n - 1) printf(", ");
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_print failed: %s\n", util_error_str(rc));
   }
-  printf(")\n");
-
-  return ERR_OK;
 }

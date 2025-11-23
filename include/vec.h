@@ -1,116 +1,98 @@
 #ifndef VEC_H
 #define VEC_H
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "util.h"
-
-/**
- * @brief Structure to represent a vector.
- */
-typedef struct vec_t {
-  /** @brief Current length (dimension) of the vector. */
-  size_t n;
-  /** @brief Pointer to the dynamically allocated array of double data. */
-  double* data;
-} vec_t;
+#include "vec_types.h"
 
 /**
  * @brief Allocates memory for a vector of length n.
- * @param out Double pointer where the newly allocated vector will be stored.
  * @param n Length (dimension) of the vector to allocate.
- * @return ERR_OK on success, or an error code. On error, *out is left
- * unchanged.
+ * @return Pointer where the newly allocated vector will be stored.
  */
-util_error_t vec_alloc(vec_t** out, size_t n);
+vec_t* vec_alloc(size_t n);
 
 /**
  * @brief Creates a new vector by copying data from a C array.
  * @param data Pointer to the C array of doubles.
- * @param out Double pointer where the newly allocated vector will be stored.
  * @param n Number of elements to copy.
- * @return ERR_OK on success, or an error code. On error, *out is left
- * unchanged.
+ * @return Pointer where the newly allocated vector will be stored.
  */
-util_error_t vec_from_array(const double* data, vec_t** out, size_t n);
+vec_t* vec_from_array(const double* data, size_t n);
 
 /**
  * @brief Deallocates the memory occupied by the vector.
  * @param v Pointer to the vector to be freed.
- * @return ERR_OK on success, or an error code.
  */
-util_error_t vec_free(vec_t* v);
+void vec_free(vec_t* v);
 
 /**
  * @brief Deallocates the memory occupied by the vector and set NULL ptr.
  * @param vp Double pointer to the vector to be freed.
- * @return ERR_OK on success, or an error code.
  */
-util_error_t vec_freep(vec_t** vp);
+void vec_freep(vec_t** vp);
 
 /**
  * @brief Sets the value of an element in the vector at a specific index.
  * @param v Pointer to the vector.
  * @param i Index of the element.
  * @param val New value for the element.
- * @return ERR_OK on success, or an error code.
+ * @return True on success, false otherwise.
  */
-util_error_t vec_set(vec_t* v, size_t i, double val);
+bool vec_set(vec_t* v, size_t i, double val);
 
 /**
  * @brief Retrieves the value of an element in the vector at a specific index.
  * @param v Pointer to the vector.
  * @param i Index of the element.
- * @param out_val Pointer to a double where the retrieved value will be stored.
- * @return ERR_OK on success, or an error code.
+ * @return Retrieved value.
  */
-util_error_t vec_get(const vec_t* v, size_t i, double* out_val);
+double vec_get(const vec_t* v, size_t i);
 
 /**
- * @brief Adds two vectors.
+ * @brief Creates a NEW vector with the result of a + b.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory leak.
  * @param a Pointer to the first vector.
  * @param b Pointer to the second vector.
- * @param out Pointer to the vector where the sum will be stored. Out cannot be
- * the same as a or b.
- * @return ERR_OK on success, or an error code.
+ * @return Pointer to newly allocated vector on success, NULL on error. Caller
+ * is responsible for freeing the result with vec_free().
  */
-util_error_t vec_add(const vec_t* a, const vec_t* b, vec_t* out);
+vec_t* vec_add_new(const vec_t* a, const vec_t* b);
 
 /**
- * @brief Subtracts two vectors.
+ * @brief Creates a NEW vector with the result of a - b.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory leak.
  * @param a Pointer to the vector to be subtracted from.
  * @param b Pointer to the vector to subtract.
- * @param out Pointer to the vector where the difference will be stored. Out
- * cannot be the same as a or b.
- * @return ERR_OK on success, or an error code.
+ * @return Pointer to newly allocated vector on success, NULL on error. Caller
+ * is responsible for freeing the result with vec_free().
  */
-util_error_t vec_subtract(const vec_t* a, const vec_t* b, vec_t* out);
+vec_t* vec_subtract_new(const vec_t* a, const vec_t* b);
 
 /**
- * @brief Scales a vector by a scalar.
+ * @brief Creates a NEW vector with the result of a * scalar.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory leak.
  * @param a Pointer to the vector that will be scaled.
- * @param out Pointer to the vector where the scalar multiplication will be
- * stored. Out cannot be the same as a or b.
  * @param scalar The scalar multiplier value.
- * @return ERR_OK on success, or an error code.
+ * @return Pointer to newly allocated vector on success, NULL on error. Caller
+ * is responsible for freeing the result with vec_free().
  */
-util_error_t vec_scale(const vec_t* a, vec_t* out, double scalar);
+vec_t* vec_scale_new(const vec_t* a, double scalar);
 
 /**
  * @brief Computes the dot product of two vectors.
  * @param a Pointer to the first vector.
  * @param b Pointer to the second vector.
- * @param out_result Pointer to a double where the dot product result will be
- * stored.
- * @return ERR_OK on success, or an error code.
+ * @return Dot product or NAN on error.
  */
-util_error_t vec_dot(const vec_t* a, const vec_t* b, double* out_result);
+double vec_dot(const vec_t* a, const vec_t* b);
 
 /**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
  * @param v Pointer to the vector to be printed.
- * @return ERR_OK on success, or an error code.
  */
-util_error_t vec_print(const vec_t* v);
+void vec_print(const vec_t* v);
 
-#endif
+#endif  // VEC_API_H
