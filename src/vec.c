@@ -88,7 +88,7 @@ vec_t* vec_add_new(const vec_t* a, const vec_t* b) {
 
 vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_substract_new failed: %s\n", util_error_str(ERR_NULL));
+    fprintf(stderr, "vec_subtract_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -100,7 +100,7 @@ vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_subtract_rc(a, b, result);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_substract_new failed: %s\n", util_error_str(rc));
+    fprintf(stderr, "vec_subtract_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
