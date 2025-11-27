@@ -142,6 +142,73 @@ double vec_dot(const vec_t* a, const vec_t* b) {
   return out;
 }
 
+vec_t* vec_cross_new(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_cross_new failed: %s\n", util_error_str(ERR_NULL));
+    return NULL;
+  }
+
+  vec_t* result = vec_alloc(a->n);
+  if (result == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_cross_rc(a, b, result);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_cross_new failed: %s\n", util_error_str(rc));
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
+}
+
+double vec_len(const vec_t* v) {
+  double out = NAN;
+  util_error_t rc = vec_len_rc(v, &out);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_len failed: %s\n", util_error_str(rc));
+    return NAN;
+  }
+
+  return out;
+}
+
+vec_t* vec_duplicate(const vec_t* v) {
+  if (v == NULL) {
+    fprintf(stderr, "vec_duplicate failed: %s\n", util_error_str(ERR_NULL));
+    return NULL;
+  }
+
+  vec_t* duplicate = vec_alloc(v->n);
+  if (duplicate == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_copy_rc(v, duplicate);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_duplicate failed: %s\n", util_error_str(rc));
+    vec_free(duplicate);
+    return NULL;
+  }
+
+  return duplicate;
+}
+
+bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_is_equal failed: %s\n", util_error_str(ERR_NULL));
+    return false;
+  }
+
+  bool result = vec_is_equal_rc(a, b, epsilon);
+
+  return result;
+}
+
 void vec_print(const vec_t* v) {
   util_error_t rc = vec_print_rc(v);
 

@@ -2,9 +2,9 @@
 #define VEC_RC_H
 
 #include <stdbool.h>
-#include "vec_types.h"
 
 #include "util.h"
+#include "vec_types.h"
 
 /**
  * @brief Allocates memory for a vector of length n.
@@ -50,10 +50,10 @@ util_error_t vec_set_rc(vec_t* v, size_t i, double val);
  * @brief Retrieves the value of an element in the vector at a specific index.
  * @param v Pointer to the vector.
  * @param i Index of the element.
- * @param out_val Pointer to a double where the retrieved value will be stored.
+ * @param out Pointer to a double where the retrieved value will be stored.
  * @return ERR_OK on success, or an error code.
  */
-util_error_t vec_get_rc(const vec_t* v, size_t i, double* out_val);
+util_error_t vec_get_rc(const vec_t* v, size_t i, double* out);
 
 /**
  * @brief Adds two vectors.
@@ -91,7 +91,42 @@ util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar);
  * stored.
  * @return ERR_OK on success, or an error code.
  */
-util_error_t vec_dot_rc(const vec_t* a, const vec_t* b, double* out_result);
+util_error_t vec_dot_rc(const vec_t* a, const vec_t* b, double* out);
+
+/**
+ * @brief Computes the cross product of two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to the vector where the cross product will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_cross_rc(const vec_t* a, const vec_t* b, vec_t* out);
+
+/**
+ * @brief Computes the length (magnitude) of vector.
+ * @param v Pointer to the vector.
+ * @param out Pointer to a double where the computed length (magnitude) will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_len_rc(const vec_t* v, double* out);
+
+/**
+ * @brief Deep copies values ​​from the source vector to the destination vector.
+ * @param src Pointer to the source vector.
+ * @param dest Pointer to the destination vector.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_copy_rc(const vec_t* src, vec_t* dest);
+
+/**
+ * @brief Compares two vectors for equality within a given permissible error
+ * (epsilon).  
+ * @param a Pointer to the first vector.  
+ * @param b Pointer to the second vector.  
+ * @param epsilon Permissible error threshold.
+ * @return True if two vectors are equal within the permissible error, False otherwise. 
+*/
+bool vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon);
 
 /**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).

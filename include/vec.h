@@ -90,9 +90,46 @@ vec_t* vec_scale_new(const vec_t* a, double scalar);
 double vec_dot(const vec_t* a, const vec_t* b);
 
 /**
+ * @brief Creates a NEW vector with the cross product of two vectors.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory
+ * leak.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @return Pointer to newly allocated vector on success, NULL on error. Caller
+ * is responsible for freeing the result with vec_free().
+ */
+vec_t* vec_cross_new(const vec_t* a, const vec_t* b);
+
+/**
+ * @brief Computes the length (magnitude) of vector.
+ * @param v Pointer to the vector.
+ * @return Length (magnitude) of the vector, or NAN on error.
+ */
+double vec_len(const vec_t* v);
+
+/**
+ * @brief Duplicate the vector.
+ * @param v Pointer to the source vector.
+ * @return Pointer to newly allocated vector on success, NULL on error. Caller
+ * is responsible for freeing the result with vec_free().
+ */
+vec_t* vec_duplicate(const vec_t* v);
+
+/**
+ * @brief Compares two vectors for equality within a given permissible error
+ * (epsilon).  
+ * @param a Pointer to the first vector.  
+ * @param b Pointer to the second vector.  
+ * @param epsilon Permissible error threshold.
+ * @return True if two vectors are equal within the permissible error, False
+ * otherwise.  
+*/
+bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon);
+
+/**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
  * @param v Pointer to the vector to be printed.
  */
 void vec_print(const vec_t* v);
 
-#endif  // VEC_API_H
+#endif  // VEC_H
