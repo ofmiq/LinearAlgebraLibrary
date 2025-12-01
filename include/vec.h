@@ -8,7 +8,7 @@
 #include "vec_types.h"
 
 /**
- * @brief Allocates memory for a vector of length n.
+ * @brief Creates a vector of length n.
  * @param n Length (dimension) of the vector to allocate.
  * @return Pointer where the newly allocated vector will be stored.
  */
@@ -47,37 +47,37 @@ bool vec_set(vec_t* v, size_t i, double val);
  * @brief Retrieves the value of an element in the vector at a specific index.
  * @param v Pointer to the vector.
  * @param i Index of the element.
- * @return Retrieved value.
+ * @return Retrieved value, or NAN on error.
  */
 double vec_get(const vec_t* v, size_t i);
 
 /**
  * @brief Creates a NEW vector with the result of a + b.
- * WARNING: This function allocates memory. Do NOT use in nested calls -> memory leak.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory
+ * leak.
  * @param a Pointer to the first vector.
  * @param b Pointer to the second vector.
- * @return Pointer to newly allocated vector on success, NULL on error. Caller
- * is responsible for freeing the result with vec_free().
+ * @return Pointer to newly allocated vector on success, NULL on error.
  */
 vec_t* vec_add_new(const vec_t* a, const vec_t* b);
 
 /**
  * @brief Creates a NEW vector with the result of a - b.
- * WARNING: This function allocates memory. Do NOT use in nested calls -> memory leak.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory
+ * leak.
  * @param a Pointer to the vector to be subtracted from.
  * @param b Pointer to the vector to subtract.
- * @return Pointer to newly allocated vector on success, NULL on error. Caller
- * is responsible for freeing the result with vec_free().
+ * @return Pointer to newly allocated vector on success, NULL on error.
  */
 vec_t* vec_subtract_new(const vec_t* a, const vec_t* b);
 
 /**
  * @brief Creates a NEW vector with the result of a * scalar.
- * WARNING: This function allocates memory. Do NOT use in nested calls -> memory leak.
+ * WARNING: This function allocates memory. Do NOT use in nested calls -> memory
+ * leak.
  * @param a Pointer to the vector that will be scaled.
  * @param scalar The scalar multiplier value.
- * @return Pointer to newly allocated vector on success, NULL on error. Caller
- * is responsible for freeing the result with vec_free().
+ * @return Pointer to newly allocated vector on success, NULL on error.
  */
 vec_t* vec_scale_new(const vec_t* a, double scalar);
 
@@ -95,8 +95,7 @@ double vec_dot(const vec_t* a, const vec_t* b);
  * leak.
  * @param a Pointer to the first vector.
  * @param b Pointer to the second vector.
- * @return Pointer to newly allocated vector on success, NULL on error. Caller
- * is responsible for freeing the result with vec_free().
+ * @return Pointer to newly allocated vector on success, NULL on error.
  */
 vec_t* vec_cross_new(const vec_t* a, const vec_t* b);
 
@@ -110,8 +109,7 @@ double vec_len(const vec_t* v);
 /**
  * @brief Duplicate the vector.
  * @param v Pointer to the source vector.
- * @return Pointer to newly allocated vector on success, NULL on error. Caller
- * is responsible for freeing the result with vec_free().
+ * @return Pointer to newly allocated vector on success, NULL on error.
  */
 vec_t* vec_duplicate(const vec_t* v);
 
@@ -125,6 +123,52 @@ vec_t* vec_duplicate(const vec_t* v);
  * otherwise.  
 */
 bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon);
+
+/**
+ * @brief Create a NEW normalized vector.
+ * @param v Pointer to the vector to be normalized.
+ * @return Pointer to newly allocated vector on success, NULL on error.
+*/
+vec_t* vec_normalized_new(const vec_t* v);
+
+/**
+ * @brief Computes the Euclidean distance between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @return Euclidean distance between two vectors, or NAN on error.
+ */
+double vec_dist(const vec_t* a, const vec_t* b);
+
+/**
+ * @brief Computes the squared Euclidean distance between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @return Euclidean squared distance between two vectors, or NAN on error.
+ */
+double vec_dist_sq(const vec_t* a, const vec_t* b);
+
+/**
+ * @brief Creates a NEW vector with the Hadamard product (element-wise
+ * product) of two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @return Pointer to newly allocated vector on success, or NULL on error.
+ */
+vec_t* vec_multiply_new(const vec_t* a, const vec_t* b);
+
+/**
+ * @brief Creates a new vector of length n filled with zeroes.
+ * @param n Length (dimension) of the vector to allocate.
+ * @return Pointer where the newly allocated vector will be stored, or NULL on error.
+ */
+vec_t* vec_zeros(size_t n);
+
+/**
+ * @brief Creates a new vector of length n filled with ones.
+ * @param n Length (dimension) of the vector to allocate.
+ * @return Pointer where the newly allocated vector will be stored, or NULL on error.
+ */
+vec_t* vec_ones(size_t n);
 
 /**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).

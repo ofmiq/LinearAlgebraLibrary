@@ -87,7 +87,7 @@ util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar);
  * @brief Computes the dot product of two vectors.
  * @param a Pointer to the first vector.
  * @param b Pointer to the second vector.
- * @param out_result Pointer to a double where the dot product result will be
+ * @param out Pointer to a double where the dot product result will be
  * stored.
  * @return ERR_OK on success, or an error code.
  */
@@ -127,6 +127,48 @@ util_error_t vec_copy_rc(const vec_t* src, vec_t* dest);
  * @return True if two vectors are equal within the permissible error, False otherwise. 
 */
 bool vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon);
+
+/**
+ * @brief Normalizes the vector in-place.
+ * @param v Pointer to the vector to be normalized.
+ * @return ERR_OK on success, or an error code.
+*/
+util_error_t vec_normalize_rc(vec_t* v);
+
+/**
+ * @brief Computes the Euclidean distance between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to a double where the distance will be stored.
+ * @return ERR_OK on success, or an error code.
+*/
+util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out);
+
+/**
+ * @brief Computes the squared Euclidean distance between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to a double where the squared distance will be stored.
+ * @return ERR_OK on success, or an error code.
+*/
+util_error_t vec_dist_sq_rc(const vec_t* a, const vec_t* b, double* out);
+
+/**
+ * @brief Computes the Hadamard product (element-wise product) of two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to a vector where the Hadamard product will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_multiply_rc(const vec_t* a, const vec_t* b, vec_t* out);
+
+/**
+ * @brief Fill a vector by value.
+ * @param v Pointer to the vector.
+ * @param val The value that will be vector filled.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_fill_rc(vec_t* v, double val);
 
 /**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).

@@ -184,10 +184,15 @@ util_error_t vec_dot_rc(const vec_t* a, const vec_t* b, double* out) {
 }
 
 util_error_t vec_cross_rc(const vec_t* a, const vec_t* b, vec_t* out) {
-  if (a == NULL || b == NULL || out == NULL) return ERR_NULL;
-  if (a->data == NULL || b->data == NULL || out->data == NULL) return ERR_NULL;
-
-  if (a->n != 3 || b->n != 3 || out->n != 3) return ERR_DIM;
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != 3 || b->n != 3 || out->n != 3) {
+    return ERR_DIM;
+  }
 
   double x = a->data[1] * b->data[2] - a->data[2] * b->data[1];
   double y = a->data[2] * b->data[0] - a->data[0] * b->data[2];
@@ -251,8 +256,110 @@ bool vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon) {
       return false;
     }
   }
-  
+
   return true;
+}
+
+util_error_t vec_normalize_rc(vec_t* v) {
+  if (v == NULL) {
+    return ERR_NULL;
+  }
+
+  double len = 0.0;
+  util_error_t rc = vec_len_rc(v, &len);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  if (len == 0.0) {
+    return ERR_RANGE;
+  }
+
+  double inv_len = 1.0 / len;
+
+  return vec_scale_rc(v, v, inv_len);
+}
+
+util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n) {
+    return ERR_DIM;
+  }
+
+  double sum = 0.0;
+
+  for (size_t i = 0; i < a->n; ++i) {
+    double diff = b->data[i] - a->data[i];
+    sum += diff * diff;
+  }
+
+  *out = sqrt(sum);
+
+  return ERR_OK;
+}
+
+util_error_t vec_dist_sq_rc(const vec_t* a, const vec_t* b, double* out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n) {
+    return ERR_DIM;
+  }
+
+  double sum = 0.0;
+
+  for (size_t i = 0; i < a->n; ++i) {
+    double diff = b->data[i] - a->data[i];
+    sum += diff * diff;
+  }
+
+  *out = sum;
+
+  return ERR_OK;
+}
+
+util_error_t vec_multiply_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n || out->n != a->n) {
+    return ERR_DIM;
+  }
+
+  for (size_t i = 0; i < a->n; ++i) {
+    out->data[i] = a->data[i] * b->data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_fill_rc(vec_t* v, double val) {
+  if (v == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+  if (isnan(val)) {
+    return ERR_INVALID_ARG;
+  }
+
+  for (size_t i = 0; i < v->n; ++i) {
+    v->data[i] = val;
+  }
+
+  return ERR_OK;
 }
 
 util_error_t vec_print_rc(const vec_t* v) {

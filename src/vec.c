@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdio.h>
 
+#include "config.h"
 #include "vec_rc.h"
 
 vec_t* vec_alloc(size_t n) {
@@ -200,13 +201,135 @@ vec_t* vec_duplicate(const vec_t* v) {
 
 bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_is_equal failed: %s\n", util_error_str(ERR_NULL));
+    fprintf(stderr, "vec_is_equal failed: %s\n",
+            util_error_str(ERR_INVALID_ARG));
     return false;
   }
 
   bool result = vec_is_equal_rc(a, b, epsilon);
 
   return result;
+}
+
+vec_t* vec_normalized_new(const vec_t* v) {
+  if (v == NULL) {
+    fprintf(stderr, "vec_normalized_new failed: %s\n",
+            util_error_str(ERR_NULL));
+    return false;
+  }
+
+  vec_t* normalized = vec_duplicate(v);
+  if (normalized == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_normalize_rc(normalized);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_normalized_new failed: %s\n", util_error_str(rc));
+    vec_free(normalized);
+    return NULL;
+  }
+
+  return normalized;
+}
+
+double vec_dist(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(ERR_INVALID_ARG));
+    return NAN;
+  }
+
+  double dist = 0.0;
+
+  util_error_t rc = vec_dist_rc(a, b, &dist);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(rc));
+    return NAN;
+  }
+
+  return dist;
+}
+
+double vec_dist_sq(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(ERR_INVALID_ARG));
+    return NAN;
+  }
+
+  double dist = 0.0;
+
+  util_error_t rc = vec_dist_sq_rc(a, b, &dist);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(rc));
+    return NAN;
+  }
+
+  return dist;
+}
+
+vec_t* vec_multiply_new(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    fprintf(stderr, "vec_multiply_new failed: %s\n", util_error_str(ERR_NULL));
+    return NULL;
+  }
+
+  vec_t* result = vec_alloc(a->n);
+  if (result == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_multiply_rc(a, b, result);
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_multiply_new failed: %s\n", util_error_str(rc));
+    return NULL;
+  }
+
+  return result;
+}
+
+vec_t* vec_zeros(size_t n) {
+  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
+    return NULL;
+  }
+
+  vec_t* v = (vec_t*)malloc(sizeof(vec_t));
+  if (v == NULL) {
+    return NULL;
+  }
+
+  v->data = (double*)calloc(n, sizeof(double));
+  if (v->data == NULL) {
+    free(v);
+    return NULL;
+  }
+
+  v->n = n;
+
+  return v;
+}
+
+vec_t* vec_ones(size_t n) {
+  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
+    return NULL;
+  }
+
+  vec_t* v = vec_alloc(n);
+  if (v == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_fill_rc(v, 1.0);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_ones failed: %s\n", util_error_str(rc));
+    vec_free(v);
+    return NULL;
+  }
+
+  return v;
 }
 
 void vec_print(const vec_t* v) {
