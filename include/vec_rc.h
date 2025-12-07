@@ -171,6 +171,31 @@ util_error_t vec_multiply_rc(const vec_t* a, const vec_t* b, vec_t* out);
 util_error_t vec_fill_rc(vec_t* v, double val);
 
 /**
+ * @brief Finds the minimum value in the vector.
+ * @param v Pointer to the vector.
+ * @param out Pointer to store the minimum value.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_min_rc(const vec_t* v, double* out);
+
+/**
+ * @brief Finds the maximum value in the vector.
+ * @param v Pointer to the vector.
+ * @param out Pointer to store the maximum value.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_max_rc(const vec_t* v, double* out);
+
+/**
+ * @brief Applies a function to every element of the source vector.
+ * @param src Pointer to the source vector.
+ * @param dest Pointer to the destination vector.
+ * @param func Function pointer to apply (e.g., sin, sqrt).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func);
+
+/**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
  * @param v Pointer to the vector to be printed.
  * @return ERR_OK on success, or an error code.

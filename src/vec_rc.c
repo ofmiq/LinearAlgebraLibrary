@@ -362,6 +362,73 @@ util_error_t vec_fill_rc(vec_t* v, double val) {
   return ERR_OK;
 }
 
+util_error_t vec_min_rc(const vec_t* v, double* out) {
+  if (v == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+  if (v->n == 0) {
+    return ERR_DIM;
+  }
+
+  double min_val = v->data[0];
+  for (size_t i = 1; i < v->n; ++i) {
+    if (v->data[i] < min_val) {
+      min_val = v->data[i];
+    }
+  }
+
+  *out = min_val;
+
+  return ERR_OK;
+}
+
+util_error_t vec_max_rc(const vec_t* v, double* out) {
+  if (v == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+  if (v->n == 0) {
+    return ERR_DIM;
+  }
+
+  double max_val = v->data[0];
+  for (size_t i = 1; i < v->n; ++i) {
+    if (v->data[i] > max_val) {
+      max_val = v->data[i];
+    }
+  }
+
+  *out = max_val;
+
+  return ERR_OK;
+}
+
+util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func) {
+  if (src == NULL || dest == NULL || func == NULL) {
+    return ERR_NULL;
+  }
+  if (src->data == NULL || dest->data == NULL) {
+    return ERR_NULL;
+  }
+  if (src->n != dest->n) {
+    return ERR_DIM;
+  }
+
+  for (size_t i = 0; i < src->n; ++i) {
+    dest->data[i] = func(src->data[i]);
+    if (isnan(dest->data[i])) {
+      return ERR_INVALID_ARG;
+    }
+  }
+
+  return ERR_OK;
+}
+
 util_error_t vec_print_rc(const vec_t* v) {
   if (v == NULL) {
     return ERR_NULL;

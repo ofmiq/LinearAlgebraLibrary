@@ -33,13 +33,9 @@ vec_t* vec_from_array(const double* src, size_t n) {
   return v;
 }
 
-void vec_free(vec_t* v) {
-  vec_free_rc(v);
-}
+void vec_free(vec_t* v) { vec_free_rc(v); }
 
-void vec_freep(vec_t** vp) {
-  vec_freep_rc(vp);
-}
+void vec_freep(vec_t** vp) { vec_freep_rc(vp); }
 
 bool vec_set(vec_t* v, size_t i, double val) {
   util_error_t rc = vec_set_rc(v, i, val);
@@ -202,7 +198,7 @@ vec_t* vec_duplicate(const vec_t* v) {
 bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
   if (a == NULL || b == NULL) {
     fprintf(stderr, "vec_is_equal failed: %s\n",
-            util_error_str(ERR_INVALID_ARG));
+            util_error_str(ERR_NULL));
     return false;
   }
 
@@ -215,7 +211,7 @@ vec_t* vec_normalized_new(const vec_t* v) {
   if (v == NULL) {
     fprintf(stderr, "vec_normalized_new failed: %s\n",
             util_error_str(ERR_NULL));
-    return false;
+    return NULL;
   }
 
   vec_t* normalized = vec_duplicate(v);
@@ -330,6 +326,63 @@ vec_t* vec_ones(size_t n) {
   }
 
   return v;
+}
+
+double vec_min(const vec_t* v) {
+  if (v == NULL) {
+    fprintf(stderr, "vec_min failed: %s\n", util_error_str(ERR_NULL));
+    return NAN;
+  }
+
+  double min_val = 0.0;
+
+  util_error_t rc = vec_min_rc(v, &min_val);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_min failed: %s\n", util_error_str(rc));
+    return NAN;
+  }
+
+  return min_val;
+}
+
+double vec_max(const vec_t* v) {
+  if (v == NULL) {
+    fprintf(stderr, "vec_max failed: %s\n", util_error_str(ERR_NULL));
+    return NAN;
+  }
+
+  double max_val = 0.0;
+
+  util_error_t rc = vec_max_rc(v, &max_val);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_min failed: %s\n", util_error_str(rc));
+    return NAN;
+  }
+
+  return max_val;
+}
+
+vec_t* vec_map_new(const vec_t* v, vec_map_func_t func) {
+  if (v == NULL || func == NULL) {
+    return ERR_NULL;
+  }
+
+  vec_t* result = vec_alloc(v->n);
+  if (result == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_map_rc(v, result, func);
+
+  if (rc != ERR_OK) {
+    fprintf(stderr, "vec_map_new failed: %s\n", util_error_str(rc));
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
 }
 
 void vec_print(const vec_t* v) {

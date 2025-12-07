@@ -171,6 +171,29 @@ vec_t* vec_zeros(size_t n);
 vec_t* vec_ones(size_t n);
 
 /**
+ * @brief Finds the minimum value in the vector.
+ * @param v Pointer to the vector.
+ * @return Minimum value, or NAN on error.
+ */
+double vec_min(const vec_t* v);
+
+/**
+ * @brief Finds the maximum value in the vector.
+ * @param v Pointer to the vector.
+ * @return Maximum value, or NAN on error.
+ */
+double vec_max(const vec_t* v);
+
+/**
+ * @brief Creates a NEW vector by applying a function to each element.
+ * WARNING: Allocates memory.
+ * @param v Pointer to the source vector.
+ * @param func Function to apply (e.g., sin, cos).
+ * @return Pointer to newly allocated vector, or NULL on error.
+ */
+vec_t* vec_map_new(const vec_t* v, vec_map_func_t func);
+
+/**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
  * @param v Pointer to the vector to be printed.
  */

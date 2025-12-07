@@ -20,4 +20,10 @@ typedef enum {
  */
 const char* util_error_str(util_error_t code);
 
+/**
+ * @brief Function pointer type for mapping operations.
+ * Takes a double and returns a double (e.g., sin, cos, abs).
+ */
+typedef double (*vec_map_func_t)(double);
+
 #endif  // UTIL_H
