@@ -12,7 +12,6 @@ vec_t* vec_alloc(size_t n) {
   util_error_t rc = vec_alloc_rc(&v, n);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_alloc(%zu) failed: %s\n", n, util_error_str(rc));
     return NULL;
   }
 
@@ -25,8 +24,6 @@ vec_t* vec_from_array(const double* src, size_t n) {
   util_error_t rc = vec_from_array_rc(src, &v, n);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_from_array(...,%zu) failed: %s\n", n,
-            util_error_str(rc));
     return NULL;
   }
 
@@ -41,7 +38,6 @@ bool vec_set(vec_t* v, size_t i, double val) {
   util_error_t rc = vec_set_rc(v, i, val);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_set failed: %s\n", util_error_str(rc));
     return false;
   }
 
@@ -54,7 +50,6 @@ double vec_get(const vec_t* v, size_t i) {
   util_error_t rc = vec_get_rc(v, i, &out);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_get failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -63,7 +58,6 @@ double vec_get(const vec_t* v, size_t i) {
 
 vec_t* vec_add_new(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_add_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -75,7 +69,6 @@ vec_t* vec_add_new(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_add_rc(a, b, result);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_add_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -85,14 +78,12 @@ vec_t* vec_add_new(const vec_t* a, const vec_t* b) {
 
 bool vec_add_inplace(vec_t* dest, const vec_t* src) {
   if (dest == NULL || src == NULL) {
-    fprintf(stderr, "vec_add_inplace failed: %s\n", util_error_str(ERR_NULL));
     return false;
   }
 
   util_error_t rc = vec_add_inplace_rc(dest, src);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_add_inplace failed: %s\n", util_error_str(rc));
     return false;
   }
 
@@ -101,7 +92,6 @@ bool vec_add_inplace(vec_t* dest, const vec_t* src) {
 
 vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_subtract_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -113,7 +103,6 @@ vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_subtract_rc(a, b, result);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_subtract_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -123,15 +112,12 @@ vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
 
 bool vec_subtract_inplace(vec_t* dest, const vec_t* src) {
   if (dest == NULL || src == NULL) {
-    fprintf(stderr, "vec_subtract_inplace failed: %s\n",
-            util_error_str(ERR_NULL));
     return false;
   }
 
   util_error_t rc = vec_subtract_inplace_rc(dest, src);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_subtract_inplace failed: %s\n", util_error_str(rc));
     return false;
   }
 
@@ -140,7 +126,6 @@ bool vec_subtract_inplace(vec_t* dest, const vec_t* src) {
 
 vec_t* vec_scale_new(const vec_t* a, double scalar) {
   if (a == NULL) {
-    fprintf(stderr, "vec_scale_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -152,7 +137,6 @@ vec_t* vec_scale_new(const vec_t* a, double scalar) {
   util_error_t rc = vec_scale_rc(a, result, scalar);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_scale_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -168,7 +152,6 @@ void vec_scale_inplace(vec_t* v, double scalar) {
   util_error_t rc = vec_scale_inplace_rc(v, scalar);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_scale_inplace failed: %s\n", util_error_str(rc));
     return;
   }
 }
@@ -178,7 +161,6 @@ double vec_dot(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_dot_rc(a, b, &out);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_dot failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -187,12 +169,10 @@ double vec_dot(const vec_t* a, const vec_t* b) {
 
 vec_t* vec_cross_new(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_cross_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
   if (a->n != 3 || b->n != 3) {
-    fprintf(stderr, "vec_cross_new failed: %s\n", util_error_str(ERR_DIM));
     return NULL;
   }
 
@@ -204,7 +184,6 @@ vec_t* vec_cross_new(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_cross_rc(a, b, result);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_cross_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -214,14 +193,12 @@ vec_t* vec_cross_new(const vec_t* a, const vec_t* b) {
 
 bool vec_cross_inplace(vec_t* dest, const vec_t* src) {
   if (dest == NULL || src == NULL) {
-    fprintf(stderr, "vec_cross_inplace failed: %s\n", util_error_str(ERR_NULL));
     return false;
   }
 
   util_error_t rc = vec_cross_inplace_rc(dest, src);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_cross_inplace failed: %s\n", util_error_str(rc));
     return false;
   }
 
@@ -233,7 +210,6 @@ double vec_len(const vec_t* v) {
   util_error_t rc = vec_len_rc(v, &out);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_len failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -242,7 +218,6 @@ double vec_len(const vec_t* v) {
 
 vec_t* vec_duplicate(const vec_t* v) {
   if (v == NULL) {
-    fprintf(stderr, "vec_duplicate failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -254,7 +229,6 @@ vec_t* vec_duplicate(const vec_t* v) {
   util_error_t rc = vec_copy_rc(v, duplicate);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_duplicate failed: %s\n", util_error_str(rc));
     vec_free(duplicate);
     return NULL;
   }
@@ -264,7 +238,6 @@ vec_t* vec_duplicate(const vec_t* v) {
 
 bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_is_equal failed: %s\n", util_error_str(ERR_NULL));
     return false;
   }
 
@@ -275,8 +248,6 @@ bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
 
 vec_t* vec_normalized_new(const vec_t* v) {
   if (v == NULL) {
-    fprintf(stderr, "vec_normalized_new failed: %s\n",
-            util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -288,7 +259,6 @@ vec_t* vec_normalized_new(const vec_t* v) {
   util_error_t rc = vec_normalize_rc(normalized);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_normalized_new failed: %s\n", util_error_str(rc));
     vec_free(normalized);
     return NULL;
   }
@@ -298,14 +268,12 @@ vec_t* vec_normalized_new(const vec_t* v) {
 
 bool vec_normalize(vec_t* v) {
   if (v == NULL) {
-    fprintf(stderr, "vec_normalize failed: %s\n", util_error_str(ERR_NULL));
     return false;
   }
 
   util_error_t rc = vec_normalize_rc(v);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_normalize failed: %s\n", util_error_str(rc));
     return false;
   }
 
@@ -314,7 +282,6 @@ bool vec_normalize(vec_t* v) {
 
 double vec_dist(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(ERR_INVALID_ARG));
     return NAN;
   }
 
@@ -323,7 +290,6 @@ double vec_dist(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_dist_rc(a, b, &dist);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -332,7 +298,6 @@ double vec_dist(const vec_t* a, const vec_t* b) {
 
 double vec_dist_sq(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(ERR_INVALID_ARG));
     return NAN;
   }
 
@@ -341,7 +306,6 @@ double vec_dist_sq(const vec_t* a, const vec_t* b) {
   util_error_t rc = vec_dist_sq_rc(a, b, &dist);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_dist failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -350,7 +314,6 @@ double vec_dist_sq(const vec_t* a, const vec_t* b) {
 
 vec_t* vec_multiply_new(const vec_t* a, const vec_t* b) {
   if (a == NULL || b == NULL) {
-    fprintf(stderr, "vec_multiply_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -361,7 +324,6 @@ vec_t* vec_multiply_new(const vec_t* a, const vec_t* b) {
 
   util_error_t rc = vec_multiply_rc(a, b, result);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_multiply_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -371,7 +333,6 @@ vec_t* vec_multiply_new(const vec_t* a, const vec_t* b) {
 
 vec_t* vec_zeros(size_t n) {
   if (n == 0) {
-    fprintf(stderr, "vec_zeros failed: %s\n", util_error_str(ERR_INVALID_ARG));
     return NULL;
   }
 
@@ -382,7 +343,6 @@ vec_t* vec_zeros(size_t n) {
 
   util_error_t rc = vec_fill_rc(v, 0.0);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_zeros failed: %s\n", util_error_str(rc));
     vec_free(v);
     return NULL;
   }
@@ -403,7 +363,6 @@ vec_t* vec_ones(size_t n) {
   util_error_t rc = vec_fill_rc(v, 1.0);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_ones failed: %s\n", util_error_str(rc));
     vec_free(v);
     return NULL;
   }
@@ -418,14 +377,12 @@ void vec_fill(vec_t* v, double val) {
 
   util_error_t rc = vec_fill_rc(v, val);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_fill failed: %s\n", util_error_str(rc));
     return;
   }
 }
 
 double vec_min(const vec_t* v) {
   if (v == NULL) {
-    fprintf(stderr, "vec_min failed: %s\n", util_error_str(ERR_NULL));
     return NAN;
   }
 
@@ -434,7 +391,6 @@ double vec_min(const vec_t* v) {
   util_error_t rc = vec_min_rc(v, &min_val);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_min failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -443,7 +399,6 @@ double vec_min(const vec_t* v) {
 
 double vec_max(const vec_t* v) {
   if (v == NULL) {
-    fprintf(stderr, "vec_max failed: %s\n", util_error_str(ERR_NULL));
     return NAN;
   }
 
@@ -452,7 +407,6 @@ double vec_max(const vec_t* v) {
   util_error_t rc = vec_max_rc(v, &max_val);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_max failed: %s\n", util_error_str(rc));
     return NAN;
   }
 
@@ -461,7 +415,6 @@ double vec_max(const vec_t* v) {
 
 vec_t* vec_map_new(const vec_t* v, vec_map_func_t func) {
   if (v == NULL || func == NULL) {
-    fprintf(stderr, "vec_map_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
@@ -472,7 +425,6 @@ vec_t* vec_map_new(const vec_t* v, vec_map_func_t func) {
 
   util_error_t rc = vec_map_rc(v, result, func);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_map_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -482,7 +434,6 @@ vec_t* vec_map_new(const vec_t* v, vec_map_func_t func) {
 
 size_t vec_size(const vec_t* vec) {
   if (vec == NULL) {
-    fprintf(stderr, "vec_size failed: %s\n", util_error_str(ERR_NULL));
     return 0;
   }
 
@@ -490,7 +441,6 @@ size_t vec_size(const vec_t* vec) {
   util_error_t rc = vec_size_rc(vec, &size);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_size failed: %s\n", util_error_str(rc));
     return 0;
   }
 
@@ -499,14 +449,12 @@ size_t vec_size(const vec_t* vec) {
 
 const double* vec_data(const vec_t* v) {
   if (v == NULL) {
-    fprintf(stderr, "vec_data failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
   const double* data = NULL;
   util_error_t rc = vec_data_rc(v, &data);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_data failed: %s\n", util_error_str(rc));
     return NULL;
   }
 
@@ -525,7 +473,6 @@ vec_t* vec_resize_new(const vec_t* v, size_t new_n) {
 
   util_error_t rc = vec_resize_rc(&duplicate, new_n);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_resize_new failed: %s\n", util_error_str(rc));
     vec_free(duplicate);
     return NULL;
   }
@@ -540,7 +487,6 @@ bool vec_resize_inplace(vec_t* v, size_t new_n) {
 
   util_error_t rc = vec_resize_rc(v, new_n);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_resize_inplace failed: %s\n", util_error_str(rc));
     return false;
   }
 
@@ -549,19 +495,16 @@ bool vec_resize_inplace(vec_t* v, size_t new_n) {
 
 vec_t* vec_axpy_new(double a, const vec_t* x, const vec_t* y) {
   if (x == NULL || y == NULL) {
-    fprintf(stderr, "vec_axpy_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
   vec_t* result = vec_duplicate(y);
   if (result == NULL) {
-    fprintf(stderr, "vec_axpy_new failed: %s\n", util_error_str(ERR_NULL));
     return NULL;
   }
 
   util_error_t rc = vec_axpy_rc(a, x, result);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_axpy_new failed: %s\n", util_error_str(rc));
     vec_free(result);
     return NULL;
   }
@@ -576,7 +519,6 @@ void vec_swap(vec_t* a, vec_t* b) {
 
   util_error_t rc = vec_swap_rc(a, b);
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_swap failed: %s\n", util_error_str(rc));
     return;
   }
 }
@@ -585,6 +527,5 @@ void vec_print(const vec_t* v) {
   util_error_t rc = vec_print_rc(v);
 
   if (rc != ERR_OK) {
-    fprintf(stderr, "vec_print failed: %s\n", util_error_str(rc));
   }
 }
