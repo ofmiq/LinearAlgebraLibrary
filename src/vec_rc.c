@@ -127,6 +127,24 @@ util_error_t vec_add_rc(const vec_t* a, const vec_t* b, vec_t* out) {
   return ERR_OK;
 }
 
+util_error_t vec_add_inplace_rc(vec_t* dest, const vec_t* src) {
+  if (dest == NULL || src == NULL) {
+    return ERR_NULL;
+  }
+  if (dest->data == NULL || src->data == NULL) {
+    return ERR_NULL;
+  }
+  if (dest->n != src->n) {
+    return ERR_DIM;
+  }
+
+  for (size_t i = 0; i < dest->n; ++i) {
+    dest->data[i] += src->data[i];
+  }
+
+  return ERR_OK;
+}
+
 util_error_t vec_subtract_rc(const vec_t* a, const vec_t* b, vec_t* out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
@@ -145,6 +163,24 @@ util_error_t vec_subtract_rc(const vec_t* a, const vec_t* b, vec_t* out) {
   return ERR_OK;
 }
 
+util_error_t vec_subtract_inplace_rc(vec_t* dest, const vec_t* src) {
+  if (dest == NULL || src == NULL) {
+    return ERR_NULL;
+  }
+  if (dest->data == NULL || src->data == NULL) {
+    return ERR_NULL;
+  }
+  if (dest->n != src->n) {
+    return ERR_DIM;
+  }
+
+  for (size_t i = 0; i < dest->n; ++i) {
+    dest->data[i] -= src->data[i];
+  }
+
+  return ERR_OK;
+}
+
 util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar) {
   if (a == NULL || out == NULL) {
     return ERR_NULL;
@@ -158,6 +194,21 @@ util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar) {
 
   for (size_t i = 0; i < a->n; ++i) {
     out->data[i] = a->data[i] * scalar;
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_scale_inplace_rc(vec_t* v, double scalar) {
+  if (v == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+
+  for (size_t i = 0; i < v->n; ++i) {
+    v->data[i] *= scalar;
   }
 
   return ERR_OK;
@@ -201,6 +252,28 @@ util_error_t vec_cross_rc(const vec_t* a, const vec_t* b, vec_t* out) {
   out->data[0] = x;
   out->data[1] = y;
   out->data[2] = z;
+
+  return ERR_OK;
+}
+
+util_error_t vec_cross_inplace_rc(vec_t* dest, const vec_t* src) {
+  if (dest == NULL || src == NULL) {
+    return ERR_NULL;
+  }
+  if (dest->data == NULL || src->data == NULL) {
+    return ERR_NULL;
+  }
+  if (dest->n != 3 || src->n != 3) {
+    return ERR_DIM;
+  }
+
+  double d0 = dest->data[0];
+  double d1 = dest->data[1];
+  double d2 = dest->data[2];
+
+  dest->data[0] = d1 * src->data[2] - d2 * src->data[1];
+  dest->data[1] = d2 * src->data[0] - d0 * src->data[2];
+  dest->data[2] = d0 * src->data[1] - d1 * src->data[0];
 
   return ERR_OK;
 }
@@ -277,7 +350,7 @@ util_error_t vec_normalize_rc(vec_t* v) {
 
   double inv_len = 1.0 / len;
 
-  return vec_scale_rc(v, v, inv_len);
+  return vec_scale_inplace_rc(v, inv_len);
 }
 
 util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out) {
@@ -420,11 +493,96 @@ util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func) {
   }
 
   for (size_t i = 0; i < src->n; ++i) {
-    dest->data[i] = func(src->data[i]);
-    if (isnan(dest->data[i])) {
+    double tmp = func(src->data[i]);
+    if (isnan(tmp)) {
       return ERR_INVALID_ARG;
     }
+    dest->data[i] = tmp;
   }
+
+  return ERR_OK;
+}
+
+util_error_t vec_size_rc(const vec_t* v, size_t* out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  *out = v->n;
+  return ERR_OK;
+}
+
+util_error_t vec_data_rc(const vec_t* v, const double** out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+  *out = v->data;
+
+  return ERR_OK;
+}
+
+util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
+  if (vp == NULL || *vp == NULL) {
+    return ERR_NULL;
+  }
+  vec_t* v = *vp;
+
+  if (new_n == v->n) {
+    return ERR_OK;
+  }
+
+  if (new_n == 0 || new_n > VECTOR_MAX_ELEMENTS) {
+    return ERR_RANGE;
+  }
+
+  if (new_n > SIZE_MAX / sizeof *v->data) {
+    return ERR_RANGE;
+  }
+
+  double* new_data = realloc(v->data, new_n * sizeof *v->data);
+  if (new_data == NULL) {
+    return ERR_ALLOC;
+  }
+
+  v->data = new_data;
+  v->n = new_n;
+  return ERR_OK;
+}
+
+util_error_t vec_axpy_rc(double a, const vec_t* x, vec_t* y) {
+  if (x == NULL || y == NULL) {
+    return ERR_NULL;
+  }
+  if (x->data == NULL || y->data == NULL) {
+    return ERR_NULL;
+  }
+  if (x->n != y->n) {
+    return ERR_DIM;
+  }
+
+  for (size_t i = 0; i < x->n; ++i) {
+    y->data[i] = a * x->data[i] + y->data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
+  if (a == NULL || b == NULL) {
+    return ERR_NULL;
+  }
+
+  size_t temp_n = a->n;
+  a->n = b->n;
+  b->n = temp_n;
+
+  double* temp_data = a->data;
+  a->data = b->data;
+  b->data = temp_data;
 
   return ERR_OK;
 }

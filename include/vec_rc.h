@@ -65,6 +65,14 @@ util_error_t vec_get_rc(const vec_t* v, size_t i, double* out);
 util_error_t vec_add_rc(const vec_t* a, const vec_t* b, vec_t* out);
 
 /**
+ * @brief Adds the source vector to the destination vector in-place.
+ * @param dest Pointer to the destination vector (will be modified).
+ * @param src Pointer to the source vector.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_add_inplace_rc(vec_t* dest, const vec_t* src);
+
+/**
  * @brief Subtracts two vectors.
  * @param a Pointer to the vector to be subtracted from.
  * @param b Pointer to the vector to subtract.
@@ -72,6 +80,14 @@ util_error_t vec_add_rc(const vec_t* a, const vec_t* b, vec_t* out);
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_subtract_rc(const vec_t* a, const vec_t* b, vec_t* out);
+
+/**
+ * @brief Subtracts the source vector from the destination vector in-place.
+ * @param dest Pointer to the destination vector (will be modified).
+ * @param src Pointer to the source vector.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_subtract_inplace_rc(vec_t* dest, const vec_t* src);
 
 /**
  * @brief Scales a vector by a scalar.
@@ -82,6 +98,14 @@ util_error_t vec_subtract_rc(const vec_t* a, const vec_t* b, vec_t* out);
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar);
+
+/**
+ * @brief Scales a vector by a scalar in-place.
+ * @param v Pointer to the vector that will be scaled (will be modified).
+ * @param scalar The scalar multiplier value.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_scale_inplace_rc(vec_t* v, double scalar);
 
 /**
  * @brief Computes the dot product of two vectors.
@@ -101,6 +125,15 @@ util_error_t vec_dot_rc(const vec_t* a, const vec_t* b, double* out);
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_cross_rc(const vec_t* a, const vec_t* b, vec_t* out);
+
+/**
+ * @brief Computes the cross product of the destination and source vectors
+ * in-place.
+ * @param dest Pointer to the destination vector (will be modified).
+ * @param src Pointer to the source vector.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_cross_inplace_rc(vec_t* dest, const vec_t* src);
 
 /**
  * @brief Computes the length (magnitude) of vector.
@@ -125,14 +158,14 @@ util_error_t vec_copy_rc(const vec_t* src, vec_t* dest);
  * @param b Pointer to the second vector.  
  * @param epsilon Permissible error threshold.
  * @return True if two vectors are equal within the permissible error, False otherwise. 
-*/
+ */
 bool vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon);
 
 /**
  * @brief Normalizes the vector in-place.
  * @param v Pointer to the vector to be normalized.
  * @return ERR_OK on success, or an error code.
-*/
+ */
 util_error_t vec_normalize_rc(vec_t* v);
 
 /**
@@ -141,7 +174,7 @@ util_error_t vec_normalize_rc(vec_t* v);
  * @param b Pointer to the second vector.
  * @param out Pointer to a double where the distance will be stored.
  * @return ERR_OK on success, or an error code.
-*/
+ */
 util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out);
 
 /**
@@ -150,7 +183,7 @@ util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out);
  * @param b Pointer to the second vector.
  * @param out Pointer to a double where the squared distance will be stored.
  * @return ERR_OK on success, or an error code.
-*/
+ */
 util_error_t vec_dist_sq_rc(const vec_t* a, const vec_t* b, double* out);
 
 /**
@@ -194,6 +227,47 @@ util_error_t vec_max_rc(const vec_t* v, double* out);
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func);
+
+/**
+ * @brief Find a size (dimension) of a given vector.
+ * @param v Pointer to the vector.
+ * @param out Pointer to a size_t where the size of vector will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_size_rc(const vec_t* v, size_t* out);
+
+/**
+ * @brief Provide a pointer to an pointer data array.
+ * @param v Pointer to the vector.
+ * @param out Double pointer where a pointer will be saved.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_data_rc(const vec_t* v, const double** out);
+
+/**
+ * @brief Change a size of a given array.
+ * @param vp Double pointer to the vector.
+ * @param new_n New size of a vector.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_resize_rc(vec_t** vp, size_t new_n);
+
+/**
+ * @brief Computes the constant times a vector plus a vector (y = a*x + y).
+ * @param a The scalar constant 'a'.
+ * @param x Pointer to the vector 'x'.
+ * @param y Pointer to the vector 'y' (will be modified).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_axpy_rc(double a, const vec_t* x, vec_t* y);
+
+/**
+ * @brief Swaps the contents of two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_swap_rc(vec_t* a, vec_t* b);
 
 /**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
