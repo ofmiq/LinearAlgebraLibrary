@@ -7,7 +7,7 @@
 #include "vec_types.h"
 
 /**
- * @brief Allocates memory for a vector of length n.
+ * @brief Allocates memory for a vector of length n. The vector is uninitialized
  * @param out Double pointer where the newly allocated vector will be stored.
  * @param n Length (dimension) of the vector to allocate.
  * @return ERR_OK on success, or an error code. On error, *out is left
@@ -248,6 +248,7 @@ util_error_t vec_data_rc(const vec_t* v, const double** out);
  * @brief Change a size of a given array.
  * @param vp Double pointer to the vector.
  * @param new_n New size of a vector.
+ * @note If shrinking, tail elements are discarded; if expanding, new elements are zeroed.
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_resize_rc(vec_t** vp, size_t new_n);

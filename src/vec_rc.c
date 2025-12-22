@@ -267,13 +267,16 @@ util_error_t vec_cross_inplace_rc(vec_t* dest, const vec_t* src) {
     return ERR_DIM;
   }
 
-  double d0 = dest->data[0];
-  double d1 = dest->data[1];
-  double d2 = dest->data[2];
+  double a0 = dest->data[0];
+  double a1 = dest->data[1];
+  double a2 = dest->data[2];
+  double b0 = src->data[0];
+  double b1 = src->data[1];
+  double b2 = src->data[2];
 
-  dest->data[0] = d1 * src->data[2] - d2 * src->data[1];
-  dest->data[1] = d2 * src->data[0] - d0 * src->data[2];
-  dest->data[2] = d0 * src->data[1] - d1 * src->data[0];
+  dest->data[0] = a1 * b2 - a2 * b1;
+  dest->data[1] = a2 * b0 - a0 * b2;
+  dest->data[2] = a0 * b1 - a1 * b0;
 
   return ERR_OK;
 }
@@ -286,15 +289,15 @@ util_error_t vec_len_rc(const vec_t* v, double* out) {
     return ERR_NULL;
   }
 
-  double dot_product = 0.0;
-
-  util_error_t err = vec_dot_rc(v, v, &dot_product);
-  if (err != ERR_OK) {
-    return err;
+  double sum = 0.0;
+  
+  for (size_t i = 0; i < v->n; ++i) {
+    double x = v->data[i];
+    sum += x * x;
   }
-
-  *out = sqrt(dot_product);
-
+  
+  *out = sqrt(sum);
+  
   return ERR_OK;
 }
 
@@ -344,7 +347,7 @@ util_error_t vec_normalize_rc(vec_t* v) {
     return rc;
   }
 
-  if (len == 0.0) {
+  if (len < VEC_EPSILON) {
     return ERR_RANGE;
   }
 
@@ -424,7 +427,7 @@ util_error_t vec_fill_rc(vec_t* v, double val) {
   if (v->data == NULL) {
     return ERR_NULL;
   }
-  if (isnan(val)) {
+  if (!isfinite(val)) {
     return ERR_INVALID_ARG;
   }
 
@@ -494,8 +497,8 @@ util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func) {
 
   for (size_t i = 0; i < src->n; ++i) {
     double tmp = func(src->data[i]);
-    if (isnan(tmp)) {
-      return ERR_INVALID_ARG;
+    if (!isfinite(tmp)) {
+      return ERR_RANGE;
     }
     dest->data[i] = tmp;
   }
@@ -546,6 +549,10 @@ util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
   double* new_data = realloc(v->data, new_n * sizeof *v->data);
   if (new_data == NULL) {
     return ERR_ALLOC;
+  }
+
+  if (new_n > v->n) {
+    memset(new_data + v->n, 0, (new_n - v->n) * sizeof *new_data);
   }
 
   v->data = new_data;

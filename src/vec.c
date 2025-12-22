@@ -485,7 +485,7 @@ bool vec_resize_inplace(vec_t* v, size_t new_n) {
     return false;
   }
 
-  util_error_t rc = vec_resize_rc(v, new_n);
+  util_error_t rc = vec_resize_rc(&v, new_n);
   if (rc != ERR_OK) {
     return false;
   }
