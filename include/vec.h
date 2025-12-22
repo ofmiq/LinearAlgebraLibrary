@@ -101,8 +101,9 @@ vec_t* vec_scale_new(const vec_t* a, double scalar);
  * @brief Scales the vector by a scalar in-place.
  * @param v Pointer to the vector (will be modified).
  * @param scalar The scalar multiplier value.
+ * @return True on success, False otherwise.
  */
-void vec_scale_inplace(vec_t* v, double scalar);
+bool vec_scale_inplace(vec_t* v, double scalar);
 
 /**
  * @brief Computes the dot product of two vectors.
@@ -215,8 +216,9 @@ vec_t* vec_ones(size_t n);
  * @brief Fills the vector with a specific value.
  * @param v Pointer to the vector.
  * @param val The value to fill the vector with.
+ * @return True on success, False otherwise.
  */
-void vec_fill(vec_t* v, double val);
+bool vec_fill(vec_t* v, double val);
 
 /**
  * @brief Finds the minimum value in the vector.

@@ -144,16 +144,18 @@ vec_t* vec_scale_new(const vec_t* a, double scalar) {
   return result;
 }
 
-void vec_scale_inplace(vec_t* v, double scalar) {
+bool vec_scale_inplace(vec_t* v, double scalar) {
   if (v == NULL) {
-    return;
+    return false;
   }
 
   util_error_t rc = vec_scale_inplace_rc(v, scalar);
 
   if (rc != ERR_OK) {
-    return;
+    return false;
   }
+
+  return true;
 }
 
 double vec_dot(const vec_t* a, const vec_t* b) {
@@ -281,18 +283,13 @@ bool vec_normalize(vec_t* v) {
 }
 
 double vec_dist(const vec_t* a, const vec_t* b) {
-  if (a == NULL || b == NULL) {
-    return NAN;
-  }
-
   double dist = 0.0;
-
   util_error_t rc = vec_dist_rc(a, b, &dist);
-
+  
   if (rc != ERR_OK) {
     return NAN;
   }
-
+  
   return dist;
 }
 
@@ -332,53 +329,44 @@ vec_t* vec_multiply_new(const vec_t* a, const vec_t* b) {
 }
 
 vec_t* vec_zeros(size_t n) {
-  if (n == 0) {
-    return NULL;
-  }
-
   vec_t* v = vec_alloc(n);
   if (v == NULL) {
     return NULL;
   }
-
-  util_error_t rc = vec_fill_rc(v, 0.0);
-  if (rc != ERR_OK) {
+  
+  if (!vec_fill(v, 0.0)) {
     vec_free(v);
     return NULL;
   }
-
+  
   return v;
 }
 
 vec_t* vec_ones(size_t n) {
-  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
-    return NULL;
-  }
-
   vec_t* v = vec_alloc(n);
   if (v == NULL) {
     return NULL;
   }
-
-  util_error_t rc = vec_fill_rc(v, 1.0);
-
-  if (rc != ERR_OK) {
+  
+  if (!vec_fill(v, 1.0)) {
     vec_free(v);
     return NULL;
   }
-
+  
   return v;
 }
 
-void vec_fill(vec_t* v, double val) {
+bool vec_fill(vec_t* v, double val) {
   if (v == NULL) {
-    return;
+    return false;
   }
 
   util_error_t rc = vec_fill_rc(v, val);
   if (rc != ERR_OK) {
-    return;
+    return false;
   }
+
+  return true;
 }
 
 double vec_min(const vec_t* v) {
@@ -524,8 +512,5 @@ void vec_swap(vec_t* a, vec_t* b) {
 }
 
 void vec_print(const vec_t* v) {
-  util_error_t rc = vec_print_rc(v);
-
-  if (rc != ERR_OK) {
-  }
+  vec_print_rc(v);
 }
