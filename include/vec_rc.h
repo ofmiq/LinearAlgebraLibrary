@@ -157,9 +157,10 @@ util_error_t vec_copy_rc(const vec_t* src, vec_t* dest);
  * @param a Pointer to the first vector.  
  * @param b Pointer to the second vector.  
  * @param epsilon Permissible error threshold.
- * @return True if two vectors are equal within the permissible error, False otherwise. 
+ * @param out Pointer to a bool where the result will be stored.
+ * @return ERR_OK on success, or an error code.
  */
-bool vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon);
+util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon, bool* out);
 
 /**
  * @brief Normalizes the vector in-place.

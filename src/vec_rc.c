@@ -316,24 +316,26 @@ util_error_t vec_copy_rc(const vec_t* src, vec_t* dest) {
   return ERR_OK;
 }
 
-bool vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon) {
-  if (a == NULL || b == NULL) {
-    return false;
+util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon, bool* out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
   }
   if (a->data == NULL || b->data == NULL) {
-    return false;
+    return ERR_NULL;
   }
   if (a->n != b->n) {
-    return false;
+    return ERR_DIM;
   }
-
+  
   for (size_t i = 0; i < a->n; ++i) {
     if (fabs(a->data[i] - b->data[i]) > epsilon) {
-      return false;
+      *out = false;
+      return ERR_OK;
     }
   }
-
-  return true;
+  
+  *out = true;
+  return ERR_OK;
 }
 
 util_error_t vec_normalize_rc(vec_t* v) {

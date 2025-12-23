@@ -239,12 +239,13 @@ vec_t* vec_duplicate(const vec_t* v) {
 }
 
 bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
-  if (a == NULL || b == NULL) {
+  bool result = false;
+  util_error_t rc = vec_is_equal_rc(a, b, epsilon, &result);
+  
+  if (rc != ERR_OK) {
     return false;
   }
-
-  bool result = vec_is_equal_rc(a, b, epsilon);
-
+  
   return result;
 }
 
