@@ -271,6 +271,40 @@ util_error_t vec_axpy_rc(double a, const vec_t* x, vec_t* y);
 util_error_t vec_swap_rc(vec_t* a, vec_t* b);
 
 /**
+ * @brief Computes the negation of a vector.
+ * @param v Pointer to the source vector.
+ * @param out Pointer to the destination vector where the result will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_negate_rc(const vec_t* v, vec_t* out);
+
+/**
+ * @brief Computes the sum of all elements in a vector.
+ * @param v Pointer to the source vector.
+ * @param out Pointer to a double where the result will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_sum_rc(const vec_t* v, double* out);
+
+/**
+ * @brief Computes the angle (in radians) between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to a double where the result will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_angle_rc(const vec_t* a, const vec_t* b, double* out);
+
+/**
+ * @brief Computes the projection of vector a onto vector b.
+ * @param a Pointer to the vector to be projected.
+ * @param b Pointer to the vector onto which the projection is computed.
+ * @param out Pointer to the destination vector where the result will be stored.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_project_rc(const vec_t* a, const vec_t* b, vec_t* out);
+
+/**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
  * @param v Pointer to the vector to be printed.
  * @return ERR_OK on success, or an error code.

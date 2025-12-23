@@ -291,6 +291,36 @@ vec_t* vec_axpy_new(double a, const vec_t* x, const vec_t* y);
 void vec_swap(vec_t* a, vec_t* b);
 
 /**
+ * @brief Creates a NEW vector which is the negation of the input vector.
+ * @param v Pointer to the source vector.
+ * @return Pointer to newly allocated vector on success, NULL on error.
+ */
+vec_t* vec_negate_new(const vec_t* v);
+
+/**
+ * @brief Computes the sum of all elements in a vector.
+ * @param v Pointer to the source vector.
+ * @return Sum of elements, or NAN on error.
+ */
+double vec_sum(const vec_t* v);
+
+/**
+ * @brief Computes the angle (in radians) between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @return Angle between vectors in radians, or NAN on error.
+ */
+double vec_angle(const vec_t* a, const vec_t* b);
+
+/**
+ * @brief Creates a NEW vector representing the projection of vector a onto b.
+ * @param a Pointer to the vector to be projected.
+ * @param b Pointer to the vector onto which the projection is computed.
+ * @return Pointer to newly allocated vector on success, NULL on error.
+ */
+vec_t* vec_project_new(const vec_t* a, const vec_t* b);
+
+/**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).
  * @param v Pointer to the vector to be printed.
  */

@@ -6,7 +6,8 @@ static const char* const ERROR_MESSAGES[] = {
     "NULL pointer argument",                    // ERR_NULL (2)
     "Dimension/size mismatch or invalid size",  // ERR_DIM (3)
     "Index or value out of range",              // ERR_RANGE (4)
-    "Invalid argument"                          // ERR_INVALID_ARG (5)
+    "Invalid argument",                         // ERR_INVALID_ARG (5)
+    "Division by zero"                          // ERR_DIV_ZERO (6)
 };
 
 #define MAX_ERROR_CODE \

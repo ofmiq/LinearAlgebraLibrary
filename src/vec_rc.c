@@ -290,14 +290,14 @@ util_error_t vec_len_rc(const vec_t* v, double* out) {
   }
 
   double sum = 0.0;
-  
+
   for (size_t i = 0; i < v->n; ++i) {
     double x = v->data[i];
     sum += x * x;
   }
-  
+
   *out = sqrt(sum);
-  
+
   return ERR_OK;
 }
 
@@ -348,7 +348,7 @@ util_error_t vec_normalize_rc(vec_t* v) {
   }
 
   if (len < VEC_EPSILON) {
-    return ERR_RANGE;
+    return ERR_DIV_ZERO;
   }
 
   double inv_len = 1.0 / len;
@@ -590,6 +590,124 @@ util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
   double* temp_data = a->data;
   a->data = b->data;
   b->data = temp_data;
+
+  return ERR_OK;
+}
+
+util_error_t vec_negate_rc(const vec_t* v, vec_t* out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (v->n != out->n) {
+    return ERR_DIM;
+  }
+
+  for (size_t i = 0; i < v->n; ++i) {
+    out->data[i] = -(v->data[i]);
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_sum_rc(const vec_t* v, double* out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+
+  double sum = 0.0;
+  for (size_t i = 0; i < v->n; ++i) {
+    sum += v->data[i];
+  }
+
+  *out = sum;
+  return ERR_OK;
+}
+
+util_error_t vec_angle_rc(const vec_t* a, const vec_t* b, double* out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n) {
+    return ERR_DIM;
+  }
+
+  double dot = 0.0;
+  util_error_t rc = vec_dot_rc(a, b, &dot);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  double len_a = 0.0;
+  double len_b = 0.0;
+
+  rc = vec_len_rc(a, &len_a);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  rc = vec_len_rc(b, &len_b);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  if (len_a < VEC_EPSILON || len_b < VEC_EPSILON) {
+    return ERR_DIV_ZERO;
+  }
+
+  double cosine = dot / (len_a * len_b);
+
+  if (cosine > 1.0) {
+    cosine = 1.0;
+  }
+  if (cosine < -1.0) {
+    cosine = -1.0;
+  }
+
+  *out = acos(cosine);
+  return ERR_OK;
+}
+
+util_error_t vec_project_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n || out->n != b->n) {
+    return ERR_DIM;
+  }
+
+  double dot_ab = 0.0;
+  util_error_t rc = vec_dot_rc(a, b, &dot_ab);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  double dot_bb = 0.0;
+  rc = vec_dot_rc(b, b, &dot_bb);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  if (dot_bb < VEC_EPSILON) {
+    return ERR_DIV_ZERO;
+  }
+
+  double scale = dot_ab / dot_bb;
+
+  for (size_t i = 0; i < b->n; ++i) {
+    out->data[i] = scale * b->data[i];
+  }
 
   return ERR_OK;
 }

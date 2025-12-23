@@ -285,11 +285,11 @@ bool vec_normalize(vec_t* v) {
 double vec_dist(const vec_t* a, const vec_t* b) {
   double dist = 0.0;
   util_error_t rc = vec_dist_rc(a, b, &dist);
-  
+
   if (rc != ERR_OK) {
     return NAN;
   }
-  
+
   return dist;
 }
 
@@ -333,12 +333,12 @@ vec_t* vec_zeros(size_t n) {
   if (v == NULL) {
     return NULL;
   }
-  
+
   if (!vec_fill(v, 0.0)) {
     vec_free(v);
     return NULL;
   }
-  
+
   return v;
 }
 
@@ -347,12 +347,12 @@ vec_t* vec_ones(size_t n) {
   if (v == NULL) {
     return NULL;
   }
-  
+
   if (!vec_fill(v, 1.0)) {
     vec_free(v);
     return NULL;
   }
-  
+
   return v;
 }
 
@@ -511,6 +511,56 @@ void vec_swap(vec_t* a, vec_t* b) {
   }
 }
 
-void vec_print(const vec_t* v) {
-  vec_print_rc(v);
+vec_t* vec_negate_new(const vec_t* v) {
+  if (v == NULL) {
+    return NULL;
+  }
+
+  vec_t* result = vec_alloc(v->n);
+  if (result == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_negate_rc(v, result);
+  if (rc != ERR_OK) {
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
 }
+
+double vec_sum(const vec_t* v) {
+  double out = NAN;
+  util_error_t rc = vec_sum_rc(v, &out);
+  if (rc != ERR_OK) return NAN;
+  return out;
+}
+
+double vec_angle(const vec_t* a, const vec_t* b) {
+  double out = NAN;
+  util_error_t rc = vec_angle_rc(a, b, &out);
+  if (rc != ERR_OK) return NAN;
+  return out;
+}
+
+vec_t* vec_project_new(const vec_t* a, const vec_t* b) {
+  if (a == NULL || b == NULL) {
+    return NULL;
+  }
+
+  vec_t* result = vec_alloc(b->n);
+  if (result == NULL) {
+    return NULL;
+  }
+
+  util_error_t rc = vec_project_rc(a, b, result);
+  if (rc != ERR_OK) {
+    vec_free(result);
+    return NULL;
+  }
+
+  return result;
+}
+
+void vec_print(const vec_t* v) { vec_print_rc(v); }
