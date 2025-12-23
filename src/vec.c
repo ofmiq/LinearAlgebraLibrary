@@ -77,10 +77,6 @@ vec_t* vec_add_new(const vec_t* a, const vec_t* b) {
 }
 
 bool vec_add_inplace(vec_t* dest, const vec_t* src) {
-  if (dest == NULL || src == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_add_inplace_rc(dest, src);
 
   if (rc != ERR_OK) {
@@ -111,10 +107,6 @@ vec_t* vec_subtract_new(const vec_t* a, const vec_t* b) {
 }
 
 bool vec_subtract_inplace(vec_t* dest, const vec_t* src) {
-  if (dest == NULL || src == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_subtract_inplace_rc(dest, src);
 
   if (rc != ERR_OK) {
@@ -145,10 +137,6 @@ vec_t* vec_scale_new(const vec_t* a, double scalar) {
 }
 
 bool vec_scale_inplace(vec_t* v, double scalar) {
-  if (v == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_scale_inplace_rc(v, scalar);
 
   if (rc != ERR_OK) {
@@ -194,10 +182,6 @@ vec_t* vec_cross_new(const vec_t* a, const vec_t* b) {
 }
 
 bool vec_cross_inplace(vec_t* dest, const vec_t* src) {
-  if (dest == NULL || src == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_cross_inplace_rc(dest, src);
 
   if (rc != ERR_OK) {
@@ -241,19 +225,15 @@ vec_t* vec_duplicate(const vec_t* v) {
 bool vec_is_equal(const vec_t* a, const vec_t* b, double epsilon) {
   bool result = false;
   util_error_t rc = vec_is_equal_rc(a, b, epsilon, &result);
-  
+
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return result;
 }
 
 vec_t* vec_normalized_new(const vec_t* v) {
-  if (v == NULL) {
-    return NULL;
-  }
-
   vec_t* normalized = vec_duplicate(v);
   if (normalized == NULL) {
     return NULL;
@@ -270,10 +250,6 @@ vec_t* vec_normalized_new(const vec_t* v) {
 }
 
 bool vec_normalize(vec_t* v) {
-  if (v == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_normalize_rc(v);
 
   if (rc != ERR_OK) {
@@ -295,10 +271,6 @@ double vec_dist(const vec_t* a, const vec_t* b) {
 }
 
 double vec_dist_sq(const vec_t* a, const vec_t* b) {
-  if (a == NULL || b == NULL) {
-    return NAN;
-  }
-
   double dist = 0.0;
 
   util_error_t rc = vec_dist_sq_rc(a, b, &dist);
@@ -331,9 +303,6 @@ vec_t* vec_multiply_new(const vec_t* a, const vec_t* b) {
 
 vec_t* vec_zeros(size_t n) {
   vec_t* v = vec_alloc(n);
-  if (v == NULL) {
-    return NULL;
-  }
 
   if (!vec_fill(v, 0.0)) {
     vec_free(v);
@@ -345,9 +314,6 @@ vec_t* vec_zeros(size_t n) {
 
 vec_t* vec_ones(size_t n) {
   vec_t* v = vec_alloc(n);
-  if (v == NULL) {
-    return NULL;
-  }
 
   if (!vec_fill(v, 1.0)) {
     vec_free(v);
@@ -358,10 +324,6 @@ vec_t* vec_ones(size_t n) {
 }
 
 bool vec_fill(vec_t* v, double val) {
-  if (v == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_fill_rc(v, val);
   if (rc != ERR_OK) {
     return false;
@@ -371,10 +333,6 @@ bool vec_fill(vec_t* v, double val) {
 }
 
 double vec_min(const vec_t* v) {
-  if (v == NULL) {
-    return NAN;
-  }
-
   double min_val = 0.0;
 
   util_error_t rc = vec_min_rc(v, &min_val);
@@ -387,10 +345,6 @@ double vec_min(const vec_t* v) {
 }
 
 double vec_max(const vec_t* v) {
-  if (v == NULL) {
-    return NAN;
-  }
-
   double max_val = 0.0;
 
   util_error_t rc = vec_max_rc(v, &max_val);
@@ -422,10 +376,6 @@ vec_t* vec_map_new(const vec_t* v, vec_map_func_t func) {
 }
 
 size_t vec_size(const vec_t* vec) {
-  if (vec == NULL) {
-    return 0;
-  }
-
   size_t size = 0;
   util_error_t rc = vec_size_rc(vec, &size);
 
@@ -437,10 +387,6 @@ size_t vec_size(const vec_t* vec) {
 }
 
 const double* vec_data(const vec_t* v) {
-  if (v == NULL) {
-    return NULL;
-  }
-
   const double* data = NULL;
   util_error_t rc = vec_data_rc(v, &data);
   if (rc != ERR_OK) {
@@ -451,10 +397,6 @@ const double* vec_data(const vec_t* v) {
 }
 
 vec_t* vec_resize_new(const vec_t* v, size_t new_n) {
-  if (v == NULL) {
-    return NULL;
-  }
-
   vec_t* duplicate = vec_duplicate(v);
   if (duplicate == NULL) {
     return NULL;
@@ -470,10 +412,6 @@ vec_t* vec_resize_new(const vec_t* v, size_t new_n) {
 }
 
 bool vec_resize_inplace(vec_t* v, size_t new_n) {
-  if (v == NULL) {
-    return false;
-  }
-
   util_error_t rc = vec_resize_rc(&v, new_n);
   if (rc != ERR_OK) {
     return false;
@@ -483,14 +421,7 @@ bool vec_resize_inplace(vec_t* v, size_t new_n) {
 }
 
 vec_t* vec_axpy_new(double a, const vec_t* x, const vec_t* y) {
-  if (x == NULL || y == NULL) {
-    return NULL;
-  }
-
   vec_t* result = vec_duplicate(y);
-  if (result == NULL) {
-    return NULL;
-  }
 
   util_error_t rc = vec_axpy_rc(a, x, result);
   if (rc != ERR_OK) {
@@ -502,10 +433,6 @@ vec_t* vec_axpy_new(double a, const vec_t* x, const vec_t* y) {
 }
 
 void vec_swap(vec_t* a, vec_t* b) {
-  if (a == NULL || b == NULL) {
-    return;
-  }
-
   util_error_t rc = vec_swap_rc(a, b);
   if (rc != ERR_OK) {
     return;
@@ -534,14 +461,18 @@ vec_t* vec_negate_new(const vec_t* v) {
 double vec_sum(const vec_t* v) {
   double out = NAN;
   util_error_t rc = vec_sum_rc(v, &out);
-  if (rc != ERR_OK) return NAN;
+  if (rc != ERR_OK) {
+    return NAN;
+  }
   return out;
 }
 
 double vec_angle(const vec_t* a, const vec_t* b) {
   double out = NAN;
   util_error_t rc = vec_angle_rc(a, b, &out);
-  if (rc != ERR_OK) return NAN;
+  if (rc != ERR_OK) {
+    return NAN;
+  }
   return out;
 }
 
