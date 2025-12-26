@@ -7,4 +7,7 @@
 // Values ​​for comparing floating-point numbers
 #define VEC_EPSILON 1e-15
 
+// 32-byte alignment value
+#define VEC_ALIGNMENT 32
+
 #endif // CONFIG_H

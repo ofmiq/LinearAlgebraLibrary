@@ -8,6 +8,11 @@
 
 #include "config.h"
 
+static size_t get_aligned_size(size_t n) {
+  size_t bytes = n * sizeof(double);
+  return (bytes + VEC_ALIGNMENT - 1) & ~(VEC_ALIGNMENT - 1);
+}
+
 util_error_t vec_alloc_rc(vec_t** out, size_t n) {
   if (out == NULL) {
     return ERR_NULL;
@@ -17,28 +22,22 @@ util_error_t vec_alloc_rc(vec_t** out, size_t n) {
     return ERR_RANGE;
   }
 
-  vec_t* v = malloc(sizeof *v);
+  vec_t* v = (vec_t*)malloc(sizeof(vec_t));
   if (v == NULL) {
     return ERR_ALLOC;
   }
 
-  v->n = 0;
-  v->data = NULL;
+  v->n = n;
 
-  if (n > SIZE_MAX / sizeof *v->data) {
-    free(v);
-    return ERR_RANGE;
-  }
+  size_t aligned_bytes = get_aligned_size(n);
 
-  v->data = malloc(sizeof *v->data * n);
+  v->data = (double*)aligned_alloc(VEC_ALIGNMENT, aligned_bytes);
   if (v->data == NULL) {
     free(v);
     return ERR_ALLOC;
   }
 
-  v->n = n;
   *out = v;
-
   return ERR_OK;
 }
 
@@ -70,18 +69,13 @@ util_error_t vec_from_array_rc(const double* data, vec_t** out, size_t n) {
     return ERR_NULL;
   }
 
-  if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
-    return ERR_RANGE;
+  util_error_t rc = vec_alloc_rc(out, n);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
-  vec_t* v = NULL;
-  util_error_t err = vec_alloc_rc(&v, n);
-  if (err != ERR_OK) {
-    return err;
-  }
+  memcpy((*out)->data, data, n * sizeof(double));
 
-  memcpy(v->data, data, sizeof(double) * n);
-  *out = v;
   return ERR_OK;
 }
 
@@ -316,7 +310,8 @@ util_error_t vec_copy_rc(const vec_t* src, vec_t* dest) {
   return ERR_OK;
 }
 
-util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon, bool* out) {
+util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon,
+                             bool* out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -326,14 +321,14 @@ util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon, boo
   if (a->n != b->n) {
     return ERR_DIM;
   }
-  
+
   for (size_t i = 0; i < a->n; ++i) {
     if (fabs(a->data[i] - b->data[i]) > epsilon) {
       *out = false;
       return ERR_OK;
     }
   }
-  
+
   *out = true;
   return ERR_OK;
 }
@@ -534,29 +529,34 @@ util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
   if (vp == NULL || *vp == NULL) {
     return ERR_NULL;
   }
+
+  if (new_n == 0 || new_n > VECTOR_MAX_ELEMENTS) {
+    return ERR_RANGE;
+  }
+
   vec_t* v = *vp;
 
   if (new_n == v->n) {
     return ERR_OK;
   }
 
-  if (new_n == 0 || new_n > VECTOR_MAX_ELEMENTS) {
-    return ERR_RANGE;
-  }
+  size_t new_aligned_bytes = get_aligned_size(new_n);
 
-  if (new_n > SIZE_MAX / sizeof *v->data) {
-    return ERR_RANGE;
-  }
-
-  double* new_data = realloc(v->data, new_n * sizeof *v->data);
+  double* new_data = (double*)aligned_alloc(VEC_ALIGNMENT, new_aligned_bytes);
   if (new_data == NULL) {
     return ERR_ALLOC;
   }
 
+  size_t elements_to_copy = (v->n < new_n) ? v->n : new_n;
+  memcpy(new_data, v->data, elements_to_copy * sizeof(double));
+
   if (new_n > v->n) {
-    memset(new_data + v->n, 0, (new_n - v->n) * sizeof *new_data);
+    size_t old_bytes_len = v->n * sizeof(double);
+    memset((char*)new_data + old_bytes_len, 0,
+           new_aligned_bytes - old_bytes_len);
   }
 
+  free(v->data);
   v->data = new_data;
   v->n = new_n;
   return ERR_OK;
