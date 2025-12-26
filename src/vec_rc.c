@@ -103,7 +103,8 @@ util_error_t vec_get_rc(const vec_t* v, size_t i, double* out) {
   return ERR_OK;
 }
 
-util_error_t vec_add_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+util_error_t vec_add_rc(const vec_t* restrict a, const vec_t* restrict b,
+                        vec_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -114,14 +115,20 @@ util_error_t vec_add_rc(const vec_t* a, const vec_t* b, vec_t* out) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] + b->data[i];
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] + b_data[i];
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_add_inplace_rc(vec_t* dest, const vec_t* src) {
+util_error_t vec_add_inplace_rc(vec_t* restrict dest,
+                                const vec_t* restrict src) {
   if (dest == NULL || src == NULL) {
     return ERR_NULL;
   }
@@ -132,14 +139,19 @@ util_error_t vec_add_inplace_rc(vec_t* dest, const vec_t* src) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < dest->n; ++i) {
-    dest->data[i] += src->data[i];
+  const size_t n = dest->n;
+  double* restrict dest_data = dest->data;
+  const double* restrict src_data = src->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    dest_data[i] += src_data[i];
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_subtract_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+util_error_t vec_subtract_rc(const vec_t* restrict a, const vec_t* restrict b,
+                             vec_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -150,14 +162,20 @@ util_error_t vec_subtract_rc(const vec_t* a, const vec_t* b, vec_t* out) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] - b->data[i];
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] - b_data[i];
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_subtract_inplace_rc(vec_t* dest, const vec_t* src) {
+util_error_t vec_subtract_inplace_rc(vec_t* restrict dest,
+                                     const vec_t* restrict src) {
   if (dest == NULL || src == NULL) {
     return ERR_NULL;
   }
@@ -168,14 +186,19 @@ util_error_t vec_subtract_inplace_rc(vec_t* dest, const vec_t* src) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < dest->n; ++i) {
-    dest->data[i] -= src->data[i];
+  const size_t n = dest->n;
+  double* restrict dest_data = dest->data;
+  const double* restrict src_data = src->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    dest_data[i] -= src_data[i];
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar) {
+util_error_t vec_scale_rc(const vec_t* restrict a, vec_t* restrict out,
+                          double scalar) {
   if (a == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -186,14 +209,18 @@ util_error_t vec_scale_rc(const vec_t* a, vec_t* out, double scalar) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] * scalar;
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] * scalar;
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_scale_inplace_rc(vec_t* v, double scalar) {
+util_error_t vec_scale_inplace_rc(vec_t* restrict v, double scalar) {
   if (v == NULL) {
     return ERR_NULL;
   }
@@ -201,14 +228,18 @@ util_error_t vec_scale_inplace_rc(vec_t* v, double scalar) {
     return ERR_NULL;
   }
 
-  for (size_t i = 0; i < v->n; ++i) {
-    v->data[i] *= scalar;
+  const size_t n = v->n;
+  double* restrict v_data = v->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    v_data[i] *= scalar;
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_dot_rc(const vec_t* a, const vec_t* b, double* out) {
+util_error_t vec_dot_rc(const vec_t* restrict a, const vec_t* restrict b,
+                        double* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -219,16 +250,35 @@ util_error_t vec_dot_rc(const vec_t* a, const vec_t* b, double* out) {
     return ERR_DIM;
   }
 
-  double result = 0.0;
-  for (size_t i = 0; i < a->n; ++i) {
-    result += a->data[i] * b->data[i];
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+
+  double sum0 = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    sum0 += a_data[i] * b_data[i];
+    sum1 += a_data[i + 1] * b_data[i + 1];
+    sum2 += a_data[i + 2] * b_data[i + 2];
+    sum3 += a_data[i + 3] * b_data[i + 3];
   }
 
-  *out = result;
+  double total_sum = (sum0 + sum1) + (sum2 + sum3);
+
+  for (; i < n; ++i) {
+    total_sum += a_data[i] * b_data[i];
+  }
+
+  *out = total_sum;
   return ERR_OK;
 }
 
-util_error_t vec_cross_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+util_error_t vec_cross_rc(const vec_t* restrict a, const vec_t* restrict b,
+                          vec_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -239,18 +289,23 @@ util_error_t vec_cross_rc(const vec_t* a, const vec_t* b, vec_t* out) {
     return ERR_DIM;
   }
 
-  double x = a->data[1] * b->data[2] - a->data[2] * b->data[1];
-  double y = a->data[2] * b->data[0] - a->data[0] * b->data[2];
-  double z = a->data[0] * b->data[1] - a->data[1] * b->data[0];
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
 
-  out->data[0] = x;
-  out->data[1] = y;
-  out->data[2] = z;
+  double x = a_data[1] * b_data[2] - a_data[2] * b_data[1];
+  double y = a_data[2] * b_data[0] - a_data[0] * b_data[2];
+  double z = a_data[0] * b_data[1] - a_data[1] * b_data[0];
+
+  out_data[0] = x;
+  out_data[1] = y;
+  out_data[2] = z;
 
   return ERR_OK;
 }
 
-util_error_t vec_cross_inplace_rc(vec_t* dest, const vec_t* src) {
+util_error_t vec_cross_inplace_rc(vec_t* restrict dest,
+                                  const vec_t* restrict src) {
   if (dest == NULL || src == NULL) {
     return ERR_NULL;
   }
@@ -261,21 +316,24 @@ util_error_t vec_cross_inplace_rc(vec_t* dest, const vec_t* src) {
     return ERR_DIM;
   }
 
-  double a0 = dest->data[0];
-  double a1 = dest->data[1];
-  double a2 = dest->data[2];
-  double b0 = src->data[0];
-  double b1 = src->data[1];
-  double b2 = src->data[2];
+  double* restrict dest_data = dest->data;
+  const double* restrict src_data = src->data;
 
-  dest->data[0] = a1 * b2 - a2 * b1;
-  dest->data[1] = a2 * b0 - a0 * b2;
-  dest->data[2] = a0 * b1 - a1 * b0;
+  double a0 = dest_data[0];
+  double a1 = dest_data[1];
+  double a2 = dest_data[2];
+  double b0 = src_data[0];
+  double b1 = src_data[1];
+  double b2 = src_data[2];
+
+  dest_data[0] = a1 * b2 - a2 * b1;
+  dest_data[1] = a2 * b0 - a0 * b2;
+  dest_data[2] = a0 * b1 - a1 * b0;
 
   return ERR_OK;
 }
 
-util_error_t vec_len_rc(const vec_t* v, double* out) {
+util_error_t vec_len_rc(const vec_t* restrict v, double* restrict out) {
   if (v == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -283,19 +341,34 @@ util_error_t vec_len_rc(const vec_t* v, double* out) {
     return ERR_NULL;
   }
 
-  double sum = 0.0;
+  const size_t n = v->n;
+  const double* restrict v_data = v->data;
 
-  for (size_t i = 0; i < v->n; ++i) {
-    double x = v->data[i];
-    sum += x * x;
+  double sum0 = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    sum0 += v_data[i] * v_data[i];
+    sum1 += v_data[i + 1] * v_data[i + 1];
+    sum2 += v_data[i + 2] * v_data[i + 2];
+    sum3 += v_data[i + 3] * v_data[i + 3];
   }
 
-  *out = sqrt(sum);
+  double total_sum = (sum0 + sum1) + (sum2 + sum3);
+
+  for (; i < n; ++i) {
+    total_sum += v_data[i] * v_data[i];
+  }
+
+  *out = sqrt(total_sum);
 
   return ERR_OK;
 }
 
-util_error_t vec_copy_rc(const vec_t* src, vec_t* dest) {
+util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest) {
   if (src == NULL || dest == NULL) {
     return ERR_NULL;
   }
@@ -306,12 +379,16 @@ util_error_t vec_copy_rc(const vec_t* src, vec_t* dest) {
     return ERR_DIM;
   }
 
-  memcpy(dest->data, src->data, src->n * sizeof(double));
+  const size_t n = src->n;
+  const double* restrict src_data = src->data;
+  double* restrict dest_data = dest->data;
+
+  memcpy(dest_data, src_data, n * sizeof(double));
   return ERR_OK;
 }
 
-util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon,
-                             bool* out) {
+util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
+                             double epsilon, bool* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -322,8 +399,12 @@ util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon,
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    if (fabs(a->data[i] - b->data[i]) > epsilon) {
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    if (fabs(a_data[i] - b_data[i]) > epsilon) {
       *out = false;
       return ERR_OK;
     }
@@ -333,7 +414,7 @@ util_error_t vec_is_equal_rc(const vec_t* a, const vec_t* b, double epsilon,
   return ERR_OK;
 }
 
-util_error_t vec_normalize_rc(vec_t* v) {
+util_error_t vec_normalize_inplace_rc(vec_t* restrict v) {
   if (v == NULL) {
     return ERR_NULL;
   }
@@ -353,7 +434,8 @@ util_error_t vec_normalize_rc(vec_t* v) {
   return vec_scale_inplace_rc(v, inv_len);
 }
 
-util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out) {
+util_error_t vec_dist_rc(const vec_t* restrict a, const vec_t* restrict b,
+                         double* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -364,19 +446,42 @@ util_error_t vec_dist_rc(const vec_t* a, const vec_t* b, double* out) {
     return ERR_DIM;
   }
 
-  double sum = 0.0;
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
 
-  for (size_t i = 0; i < a->n; ++i) {
-    double diff = b->data[i] - a->data[i];
-    sum += diff * diff;
+  double sum0 = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    double diff0 = b_data[i] - a_data[i];
+    double diff1 = b_data[i + 1] - a_data[i + 1];
+    double diff2 = b_data[i + 2] - a_data[i + 2];
+    double diff3 = b_data[i + 3] - a_data[i + 3];
+
+    sum0 += diff0 * diff0;
+    sum1 += diff1 * diff1;
+    sum2 += diff2 * diff2;
+    sum3 += diff3 * diff3;
   }
 
-  *out = sqrt(sum);
+  double total_sum = (sum0 + sum1) + (sum2 + sum3);
+
+  for (; i < n; ++i) {
+    double diff = b_data[i] - a_data[i];
+    total_sum += diff * diff;
+  }
+
+  *out = sqrt(total_sum);
 
   return ERR_OK;
 }
 
-util_error_t vec_dist_sq_rc(const vec_t* a, const vec_t* b, double* out) {
+util_error_t vec_dist_sq_rc(const vec_t* restrict a, const vec_t* restrict b,
+                            double* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -387,19 +492,47 @@ util_error_t vec_dist_sq_rc(const vec_t* a, const vec_t* b, double* out) {
     return ERR_DIM;
   }
 
-  double sum = 0.0;
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
 
-  for (size_t i = 0; i < a->n; ++i) {
-    double diff = b->data[i] - a->data[i];
-    sum += diff * diff;
+  double sum0 = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  double diff0 = 0.0;
+  double diff1 = 0.0;
+  double diff2 = 0.0;
+  double diff3 = 0.0;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    diff0 = b_data[i] - a_data[i];
+    diff1 = b_data[i + 1] - a_data[i + 1];
+    diff2 = b_data[i + 2] - a_data[i + 2];
+    diff3 = b_data[i + 3] - a_data[i + 3];
+
+    sum0 += diff0 * diff0;
+    sum1 += diff1 * diff1;
+    sum2 += diff2 * diff2;
+    sum3 += diff3 * diff3;
   }
 
-  *out = sum;
+  double total_sum = (sum0 + sum1) + (sum2 + sum3);
+
+  for (; i < n; ++i) {
+    double diff = b_data[i] - a_data[i];
+    total_sum += diff * diff;
+  }
+
+  *out = total_sum;
 
   return ERR_OK;
 }
 
-util_error_t vec_multiply_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
+                             vec_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -410,14 +543,19 @@ util_error_t vec_multiply_rc(const vec_t* a, const vec_t* b, vec_t* out) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < a->n; ++i) {
-    out->data[i] = a->data[i] * b->data[i];
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] * b_data[i];
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_fill_rc(vec_t* v, double val) {
+util_error_t vec_fill_rc(vec_t* restrict v, double val) {
   if (v == NULL) {
     return ERR_NULL;
   }
@@ -428,14 +566,17 @@ util_error_t vec_fill_rc(vec_t* v, double val) {
     return ERR_INVALID_ARG;
   }
 
-  for (size_t i = 0; i < v->n; ++i) {
-    v->data[i] = val;
+  const size_t n = v->n;
+  double* restrict v_data = v->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    v_data[i] = val;
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_min_rc(const vec_t* v, double* out) {
+util_error_t vec_min_rc(const vec_t* restrict v, double* restrict out) {
   if (v == NULL) {
     return ERR_NULL;
   }
@@ -446,10 +587,13 @@ util_error_t vec_min_rc(const vec_t* v, double* out) {
     return ERR_DIM;
   }
 
-  double min_val = v->data[0];
-  for (size_t i = 1; i < v->n; ++i) {
-    if (v->data[i] < min_val) {
-      min_val = v->data[i];
+  const size_t n = v->n;
+  const double* restrict v_data = v->data;
+
+  double min_val = v_data[0];
+  for (size_t i = 1; i < n; ++i) {
+    if (v_data[i] < min_val) {
+      min_val = v_data[i];
     }
   }
 
@@ -458,7 +602,7 @@ util_error_t vec_min_rc(const vec_t* v, double* out) {
   return ERR_OK;
 }
 
-util_error_t vec_max_rc(const vec_t* v, double* out) {
+util_error_t vec_max_rc(const vec_t* restrict v, double* restrict out) {
   if (v == NULL) {
     return ERR_NULL;
   }
@@ -469,10 +613,13 @@ util_error_t vec_max_rc(const vec_t* v, double* out) {
     return ERR_DIM;
   }
 
-  double max_val = v->data[0];
-  for (size_t i = 1; i < v->n; ++i) {
-    if (v->data[i] > max_val) {
-      max_val = v->data[i];
+  const size_t n = v->n;
+  const double* restrict v_data = v->data;
+
+  double max_val = v_data[0];
+  for (size_t i = 1; i < n; ++i) {
+    if (v_data[i] > max_val) {
+      max_val = v_data[i];
     }
   }
 
@@ -481,7 +628,8 @@ util_error_t vec_max_rc(const vec_t* v, double* out) {
   return ERR_OK;
 }
 
-util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func) {
+util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
+                        vec_map_func_t func) {
   if (src == NULL || dest == NULL || func == NULL) {
     return ERR_NULL;
   }
@@ -492,18 +640,22 @@ util_error_t vec_map_rc(const vec_t* src, vec_t* dest, vec_map_func_t func) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < src->n; ++i) {
-    double tmp = func(src->data[i]);
+  const size_t n = src->n;
+  const double* restrict src_data = src->data;
+  double* restrict dest_data = dest->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    double tmp = func(src_data[i]);
     if (!isfinite(tmp)) {
       return ERR_RANGE;
     }
-    dest->data[i] = tmp;
+    dest_data[i] = tmp;
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_size_rc(const vec_t* v, size_t* out) {
+util_error_t vec_size_rc(const vec_t* restrict v, size_t* restrict out) {
   if (v == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -512,7 +664,7 @@ util_error_t vec_size_rc(const vec_t* v, size_t* out) {
   return ERR_OK;
 }
 
-util_error_t vec_data_rc(const vec_t* v, const double** out) {
+util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out) {
   if (v == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -551,9 +703,7 @@ util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
   memcpy(new_data, v->data, elements_to_copy * sizeof(double));
 
   if (new_n > v->n) {
-    size_t old_bytes_len = v->n * sizeof(double);
-    memset((char*)new_data + old_bytes_len, 0,
-           new_aligned_bytes - old_bytes_len);
+    memset(new_data + v->n, 0, (new_n - v->n) * sizeof(double));
   }
 
   free(v->data);
@@ -562,7 +712,7 @@ util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
   return ERR_OK;
 }
 
-util_error_t vec_axpy_rc(double a, const vec_t* x, vec_t* y) {
+util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y) {
   if (x == NULL || y == NULL) {
     return ERR_NULL;
   }
@@ -573,8 +723,20 @@ util_error_t vec_axpy_rc(double a, const vec_t* x, vec_t* y) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < x->n; ++i) {
-    y->data[i] = a * x->data[i] + y->data[i];
+  const size_t n = x->n;
+  const double* restrict x_data = x->data;
+  double* restrict y_data = y->data;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    y_data[i] = a * x_data[i] + y_data[i];
+    y_data[i + 1] = a * x_data[i + 1] + y_data[i + 1];
+    y_data[i + 2] = a * x_data[i + 2] + y_data[i + 2];
+    y_data[i + 3] = a * x_data[i + 3] + y_data[i + 3];
+  }
+
+  for (; i < n; ++i) {
+    y_data[i] = a * x_data[i] + y_data[i];
   }
 
   return ERR_OK;
@@ -596,7 +758,7 @@ util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
   return ERR_OK;
 }
 
-util_error_t vec_negate_rc(const vec_t* v, vec_t* out) {
+util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out) {
   if (v == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -607,14 +769,18 @@ util_error_t vec_negate_rc(const vec_t* v, vec_t* out) {
     return ERR_DIM;
   }
 
-  for (size_t i = 0; i < v->n; ++i) {
-    out->data[i] = -(v->data[i]);
+  const size_t n = v->n;
+  const double* restrict v_data = v->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = -v_data[i];
   }
 
   return ERR_OK;
 }
 
-util_error_t vec_sum_rc(const vec_t* v, double* out) {
+util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out) {
   if (v == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -622,16 +788,33 @@ util_error_t vec_sum_rc(const vec_t* v, double* out) {
     return ERR_NULL;
   }
 
-  double sum = 0.0;
-  for (size_t i = 0; i < v->n; ++i) {
-    sum += v->data[i];
+  const size_t n = v->n;
+  const double* restrict v_data = v->data;
+
+  double sum0 = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    sum0 += v_data[i];
+    sum1 += v_data[i + 1];
+    sum2 += v_data[i + 2];
+    sum3 += v_data[i + 3];
   }
 
-  *out = sum;
+  double total_sum = (sum0 + sum1) + (sum2 + sum3);
+  for (; i < n; ++i) {
+    total_sum += v_data[i];
+  }
+
+  *out = total_sum;
   return ERR_OK;
 }
 
-util_error_t vec_angle_rc(const vec_t* a, const vec_t* b, double* out) {
+util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
+                          double* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -678,7 +861,8 @@ util_error_t vec_angle_rc(const vec_t* a, const vec_t* b, double* out) {
   return ERR_OK;
 }
 
-util_error_t vec_project_rc(const vec_t* a, const vec_t* b, vec_t* out) {
+util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
+                            vec_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
@@ -707,8 +891,12 @@ util_error_t vec_project_rc(const vec_t* a, const vec_t* b, vec_t* out) {
 
   double scale = dot_ab / dot_bb;
 
-  for (size_t i = 0; i < b->n; ++i) {
-    out->data[i] = scale * b->data[i];
+  const size_t n = b->n;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = scale * b_data[i];
   }
 
   return ERR_OK;

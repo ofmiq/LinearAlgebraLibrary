@@ -239,7 +239,7 @@ vec_t* vec_normalized_new(const vec_t* v) {
     return NULL;
   }
 
-  util_error_t rc = vec_normalize_rc(normalized);
+  util_error_t rc = vec_normalize_inplace_rc(normalized);
 
   if (rc != ERR_OK) {
     vec_free(normalized);
@@ -250,7 +250,7 @@ vec_t* vec_normalized_new(const vec_t* v) {
 }
 
 bool vec_normalize(vec_t* v) {
-  util_error_t rc = vec_normalize_rc(v);
+  util_error_t rc = vec_normalize_inplace_rc(v);
 
   if (rc != ERR_OK) {
     return false;
