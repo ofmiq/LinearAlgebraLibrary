@@ -7,11 +7,7 @@
 #include <string.h>
 
 #include "config.h"
-
-static size_t get_aligned_size(size_t n) {
-  size_t bytes = n * sizeof(double);
-  return (bytes + VEC_ALIGNMENT - 1) & ~(VEC_ALIGNMENT - 1);
-}
+#include "util.h"
 
 util_error_t vec_alloc_rc(vec_t** out, size_t n) {
   if (out == NULL) {
@@ -31,7 +27,7 @@ util_error_t vec_alloc_rc(vec_t** out, size_t n) {
 
   size_t aligned_bytes = get_aligned_size(n);
 
-  v->data = (double*)aligned_alloc(VEC_ALIGNMENT, aligned_bytes);
+  v->data = (double*)aligned_alloc(ALIGNMENT, aligned_bytes);
   if (v->data == NULL) {
     free(v);
     return ERR_ALLOC;
@@ -694,7 +690,7 @@ util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
 
   size_t new_aligned_bytes = get_aligned_size(new_n);
 
-  double* new_data = (double*)aligned_alloc(VEC_ALIGNMENT, new_aligned_bytes);
+  double* new_data = (double*)aligned_alloc(ALIGNMENT, new_aligned_bytes);
   if (new_data == NULL) {
     return ERR_ALLOC;
   }

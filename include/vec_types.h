@@ -1,7 +1,7 @@
 #ifndef VEC_TYPES_H
 #define VEC_TYPES_H
 
-#include <stdlib.h>
+#include <stddef.h>
 
 /**
  * @brief Structure to represent a vector.
