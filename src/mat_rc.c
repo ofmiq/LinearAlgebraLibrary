@@ -6,6 +6,11 @@
 
 #include "config.h"
 
+/* internal helper: validate same shape */
+static inline int mat_same_shape(const mat_t* a, const mat_t* b) {
+  return a->rows == b->rows && a->cols == b->cols;
+}
+
 util_error_t mat_alloc_rc(mat_t** out, size_t rows, size_t cols) {
   if (out == NULL) {
     return ERR_NULL;
@@ -112,5 +117,151 @@ util_error_t mat_get_rc(const mat_t* m, size_t i, size_t j, double* out) {
   }
 
   *out = MAT_AT(m, i, j);
+  return ERR_OK;
+}
+
+util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* b,
+                        mat_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(a, b) || !mat_same_shape(a, out)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->rows * a->cols;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] + b_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_add_inplace_rc(mat_t* restrict dest,
+                                const mat_t* restrict src) {
+  if (dest == NULL || src == NULL) {
+    return ERR_NULL;
+  }
+
+  if (dest->data == NULL || src->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(dest, src)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = dest->rows * dest->cols;
+  double* restrict dest_data = dest->data;
+  const double* restrict src_data = src->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    dest_data[i] += src_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* b,
+                             mat_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(a, b) || !mat_same_shape(a, out)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->rows * a->cols;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] - b_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_subtract_inplace_rc(mat_t* restrict dest,
+                                     const mat_t* restrict src) {
+  if (dest == NULL || src == NULL) {
+    return ERR_NULL;
+  }
+
+  if (dest->data == NULL || src->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(dest, src)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = dest->rows * dest->cols;
+  double* restrict dest_data = dest->data;
+  const double* restrict src_data = src->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    dest_data[i] -= src_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_scale_rc(const mat_t* restrict a, mat_t* restrict out,
+                          double scalar) {
+  if (a == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(a, out)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->rows * a->cols;
+  const double* restrict a_data = a->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] * scalar;
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_scale_inplace_rc(mat_t* restrict dest, double scalar) {
+  if (dest == NULL) {
+    return ERR_NULL;
+  }
+
+  if (dest->data == NULL) {
+    return ERR_NULL;
+  }
+
+  const size_t n = dest->rows * dest->cols;
+  double* restrict dest_data = dest->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    dest_data[i] *= scalar;
+  }
+
   return ERR_OK;
 }
