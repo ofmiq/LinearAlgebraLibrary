@@ -2,7 +2,6 @@
 #define VEC_H
 
 #include <stdbool.h>
-#include <stdlib.h>
 
 #include "util.h"
 #include "vec_types.h"

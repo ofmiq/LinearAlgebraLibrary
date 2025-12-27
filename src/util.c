@@ -1,4 +1,5 @@
 #include "util.h"
+#include "config.h"
 
 static const char* const ERROR_MESSAGES[] = {
     "Success",                                  // ERR_OK (0)
@@ -18,4 +19,9 @@ const char* util_error_str(util_error_t code) {
     return ERROR_MESSAGES[code];
   }
   return "Unknown error code";
+}
+
+size_t get_aligned_size(size_t n) {
+  size_t bytes = n * sizeof(double);
+  return (bytes + ALIGNMENT - 1) & ~(ALIGNMENT - 1);
 }
