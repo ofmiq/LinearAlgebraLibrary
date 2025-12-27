@@ -6,6 +6,10 @@
 #include "util.h"
 #include "vec_types.h"
 
+/* ============================================================ */
+/*                     Lifecycle Management                     */
+/* ============================================================ */
+
 /**
  * @brief Allocates memory for a vector of length n. The vector is uninitialized
  * @param out Double pointer where the newly allocated vector will be stored.
@@ -38,6 +42,20 @@ void vec_free_rc(vec_t* v);
 void vec_freep_rc(vec_t** vp);
 
 /**
+ * @brief Change a size of a given array.
+ * @param vp Double pointer to the vector.
+ * @param new_n New size of a vector.
+ * @note If shrinking, tail elements are discarded; if expanding, new elements
+ * are zeroed.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_resize_rc(vec_t** vp, size_t new_n);
+
+/* ============================================================ */
+/*                  Data Access and Inspection                  */
+/* ============================================================ */
+
+/**
  * @brief Sets the value of an element in the vector at a specific index.
  * @param v Pointer to the vector.
  * @param i Index of the element.
@@ -54,6 +72,28 @@ util_error_t vec_set_rc(vec_t* v, size_t i, double val);
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_get_rc(const vec_t* v, size_t i, double* out);
+
+/**
+ * @brief Find a size (dimension) of a given vector.
+ * @param v Pointer to the vector.
+ * @param out Pointer to a size_t where the size of vector will be stored.
+ * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_size_rc(const vec_t* restrict v, size_t* restrict out);
+
+/**
+ * @brief Provide a pointer to an pointer data array.
+ * @param v Pointer to the vector.
+ * @param out Double pointer where a pointer will be saved.
+ * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out);
+
+/* ============================================================ */
+/*                   Basic Vector Arithmetic                    */
+/* ============================================================ */
 
 /**
  * @brief Adds two vectors.
@@ -98,6 +138,19 @@ util_error_t vec_subtract_inplace_rc(vec_t* restrict dest,
                                      const vec_t* restrict src);
 
 /**
+ * @brief Computes the negation of a vector.
+ * @param v Pointer to the source vector.
+ * @param out Pointer to the destination vector where the result will be stored.
+ * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out);
+
+/* ============================================================ */
+/*              Scalar and Element-wise Operations              */
+/* ============================================================ */
+
+/**
  * @brief Scales a vector by a scalar.
  * @param a Pointer to the vector that will be scaled.
  * @param out Pointer to the vector where the scalar multiplication will be
@@ -116,6 +169,50 @@ util_error_t vec_scale_rc(const vec_t* restrict a, vec_t* restrict out,
  * @return ERR_OK on success, or an error code.
  */
 util_error_t vec_scale_inplace_rc(vec_t* restrict v, double scalar);
+
+/**
+ * @brief Computes the constant times a vector plus a vector (y = a*x + y).
+ * @param a The scalar constant 'a'.
+ * @param x Pointer to the vector 'x'.
+ * @param y Pointer to the vector 'y' (will be modified).
+ * @note Arguments 'x' and 'y' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y);
+
+/**
+ * @brief Computes the Hadamard product (element-wise product) of two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to a vector where the Hadamard product will be stored.
+ * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
+                             vec_t* restrict out);
+
+/**
+ * @brief Applies a function to every element of the source vector.
+ * @param src Pointer to the source vector.
+ * @param dest Pointer to the destination vector.
+ * @param func Function pointer to apply (e.g., sin, sqrt).
+ * @note Arguments 'src' and 'dest' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
+                        vec_map_func_t func);
+
+/**
+ * @brief Fill a vector by value.
+ * @param v Pointer to the vector.
+ * @param val The value that will be vector filled.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_fill_rc(vec_t* restrict v, double val);
+
+/* ============================================================ */
+/*           Vector Products and Geometric Properties           */
+/* ============================================================ */
 
 /**
  * @brief Computes the dot product of two vectors.
@@ -162,14 +259,37 @@ stored.
 util_error_t vec_len_rc(const vec_t* restrict v, double* restrict out);
 
 /**
- * @brief Deep copies values ​​from the source vector to the destination
-vector.  
- * @param src Pointer to the source vector.
- * @param dest Pointer to the destination vector.
- * @note Arguments 'dest' and 'src' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.  
-*/
-util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest);
+ * @brief Normalizes the vector in-place.
+ * @param v Pointer to the vector to be normalized.
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_normalize_inplace_rc(vec_t* restrict v);
+
+/**
+ * @brief Computes the angle (in radians) between two vectors.
+ * @param a Pointer to the first vector.
+ * @param b Pointer to the second vector.
+ * @param out Pointer to a double where the result will be stored.
+ * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
+                          double* restrict out);
+
+/**
+ * @brief Computes the projection of vector a onto vector b.
+ * @param a Pointer to the vector to be projected.
+ * @param b Pointer to the vector onto which the projection is computed.
+ * @param out Pointer to the destination vector where the result will be stored.
+ * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
+                            vec_t* restrict out);
+
+/* ============================================================ */
+/*                    Comparison and Metrics                    */
+/* ============================================================ */
 
 /**
  * @brief Compares two vectors for equality within a given permissible error
@@ -183,13 +303,6 @@ util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest);
  */
 util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
                              double epsilon, bool* restrict out);
-
-/**
- * @brief Normalizes the vector in-place.
- * @param v Pointer to the vector to be normalized.
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_normalize_inplace_rc(vec_t* restrict v);
 
 /**
  * @brief Computes the Euclidean distance between two vectors.
@@ -213,24 +326,9 @@ util_error_t vec_dist_rc(const vec_t* restrict a, const vec_t* restrict b,
 util_error_t vec_dist_sq_rc(const vec_t* restrict a, const vec_t* restrict b,
                             double* restrict out);
 
-/**
- * @brief Computes the Hadamard product (element-wise product) of two vectors.
- * @param a Pointer to the first vector.
- * @param b Pointer to the second vector.
- * @param out Pointer to a vector where the Hadamard product will be stored.
- * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
-                             vec_t* restrict out);
-
-/**
- * @brief Fill a vector by value.
- * @param v Pointer to the vector.
- * @param val The value that will be vector filled.
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_fill_rc(vec_t* restrict v, double val);
+/* ============================================================ */
+/*              Utility and Statistical Functions               */
+/* ============================================================ */
 
 /**
  * @brief Finds the minimum value in the vector.
@@ -251,53 +349,13 @@ util_error_t vec_min_rc(const vec_t* restrict v, double* restrict out);
 util_error_t vec_max_rc(const vec_t* restrict v, double* restrict out);
 
 /**
- * @brief Applies a function to every element of the source vector.
- * @param src Pointer to the source vector.
- * @param dest Pointer to the destination vector.
- * @param func Function pointer to apply (e.g., sin, sqrt).
- * @note Arguments 'src' and 'dest' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
-                        vec_map_func_t func);
-
-/**
- * @brief Find a size (dimension) of a given vector.
- * @param v Pointer to the vector.
- * @param out Pointer to a size_t where the size of vector will be stored.
+ * @brief Computes the sum of all elements in a vector.
+ * @param v Pointer to the source vector.
+ * @param out Pointer to a double where the result will be stored.
  * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code.
  */
-util_error_t vec_size_rc(const vec_t* restrict v, size_t* restrict out);
-
-/**
- * @brief Provide a pointer to an pointer data array.
- * @param v Pointer to the vector.
- * @param out Double pointer where a pointer will be saved.
- * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out);
-
-/**
- * @brief Change a size of a given array.
- * @param vp Double pointer to the vector.
- * @param new_n New size of a vector.
- * @note If shrinking, tail elements are discarded; if expanding, new elements
- * are zeroed.
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_resize_rc(vec_t** vp, size_t new_n);
-
-/**
- * @brief Computes the constant times a vector plus a vector (y = a*x + y).
- * @param a The scalar constant 'a'.
- * @param x Pointer to the vector 'x'.
- * @param y Pointer to the vector 'y' (will be modified).
- * @note Arguments 'x' and 'y' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y);
+util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out);
 
 /**
  * @brief Swaps the contents of two vectors.
@@ -308,44 +366,14 @@ util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y);
 util_error_t vec_swap_rc(vec_t* a, vec_t* b);
 
 /**
- * @brief Computes the negation of a vector.
- * @param v Pointer to the source vector.
- * @param out Pointer to the destination vector where the result will be stored.
- * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out);
-
-/**
- * @brief Computes the sum of all elements in a vector.
- * @param v Pointer to the source vector.
- * @param out Pointer to a double where the result will be stored.
- * @note Arguments 'v' and 'out' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out);
-
-/**
- * @brief Computes the angle (in radians) between two vectors.
- * @param a Pointer to the first vector.
- * @param b Pointer to the second vector.
- * @param out Pointer to a double where the result will be stored.
- * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
-                          double* restrict out);
-
-/**
- * @brief Computes the projection of vector a onto vector b.
- * @param a Pointer to the vector to be projected.
- * @param b Pointer to the vector onto which the projection is computed.
- * @param out Pointer to the destination vector where the result will be stored.
- * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
- * @return ERR_OK on success, or an error code.
- */
-util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
-                            vec_t* restrict out);
+ * @brief Deep copies values ​​from the source vector to the destination
+vector.  
+ * @param src Pointer to the source vector.
+ * @param dest Pointer to the destination vector.
+ * @note Arguments 'dest' and 'src' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.  
+*/
+util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest);
 
 /**
  * @brief Prints the vector elements to stdout in the format (v0, v1, ..., vn).

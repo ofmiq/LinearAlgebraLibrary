@@ -9,6 +9,10 @@
 #include "config.h"
 #include "util.h"
 
+/* ============================================================ */
+/*                     Lifecycle Management                     */
+/* ============================================================ */
+
 util_error_t vec_alloc_rc(vec_t** out, size_t n) {
   if (out == NULL) {
     return ERR_NULL;
@@ -37,6 +41,25 @@ util_error_t vec_alloc_rc(vec_t** out, size_t n) {
   return ERR_OK;
 }
 
+util_error_t vec_from_array_rc(const double* data, vec_t** out, size_t n) {
+  if (out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (data == NULL) {
+    return ERR_NULL;
+  }
+
+  util_error_t rc = vec_alloc_rc(out, n);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  memcpy((*out)->data, data, n * sizeof(double));
+
+  return ERR_OK;
+}
+
 void vec_free_rc(vec_t* v) {
   if (!v) {
     return;
@@ -56,24 +79,44 @@ void vec_freep_rc(vec_t** vp) {
   *vp = NULL;
 }
 
-util_error_t vec_from_array_rc(const double* data, vec_t** out, size_t n) {
-  if (out == NULL) {
+util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
+  if (vp == NULL || *vp == NULL) {
     return ERR_NULL;
   }
 
-  if (data == NULL) {
-    return ERR_NULL;
+  if (new_n == 0 || new_n > VECTOR_MAX_ELEMENTS) {
+    return ERR_RANGE;
   }
 
-  util_error_t rc = vec_alloc_rc(out, n);
-  if (rc != ERR_OK) {
-    return rc;
+  vec_t* v = *vp;
+
+  if (new_n == v->n) {
+    return ERR_OK;
   }
 
-  memcpy((*out)->data, data, n * sizeof(double));
+  size_t new_aligned_bytes = get_aligned_size(new_n);
 
+  double* new_data = (double*)aligned_alloc(ALIGNMENT, new_aligned_bytes);
+  if (new_data == NULL) {
+    return ERR_ALLOC;
+  }
+
+  size_t elements_to_copy = (v->n < new_n) ? v->n : new_n;
+  memcpy(new_data, v->data, elements_to_copy * sizeof(double));
+
+  if (new_n > v->n) {
+    memset(new_data + v->n, 0, (new_n - v->n) * sizeof(double));
+  }
+
+  free(v->data);
+  v->data = new_data;
+  v->n = new_n;
   return ERR_OK;
 }
+
+/* ============================================================ */
+/*                  Data Access and Inspection                  */
+/* ============================================================ */
 
 util_error_t vec_set_rc(vec_t* v, size_t i, double val) {
   if (v == NULL || v->data == NULL) {
@@ -98,6 +141,32 @@ util_error_t vec_get_rc(const vec_t* v, size_t i, double* out) {
   *out = v->data[i];
   return ERR_OK;
 }
+
+util_error_t vec_size_rc(const vec_t* restrict v, size_t* restrict out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  *out = v->n;
+  return ERR_OK;
+}
+
+util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+  *out = v->data;
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                   Basic Vector Arithmetic                    */
+/* ============================================================ */
 
 util_error_t vec_add_rc(const vec_t* restrict a, const vec_t* restrict b,
                         vec_t* restrict out) {
@@ -193,6 +262,32 @@ util_error_t vec_subtract_inplace_rc(vec_t* restrict dest,
   return ERR_OK;
 }
 
+util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out) {
+  if (v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (v->n != out->n) {
+    return ERR_DIM;
+  }
+
+  const size_t n = v->n;
+  const double* restrict v_data = v->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = -v_data[i];
+  }
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*              Scalar and Element-wise Operations              */
+/* ============================================================ */
+
 util_error_t vec_scale_rc(const vec_t* restrict a, vec_t* restrict out,
                           double scalar) {
   if (a == NULL || out == NULL) {
@@ -233,6 +328,112 @@ util_error_t vec_scale_inplace_rc(vec_t* restrict v, double scalar) {
 
   return ERR_OK;
 }
+
+util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y) {
+  if (x == NULL || y == NULL) {
+    return ERR_NULL;
+  }
+  if (x->data == NULL || y->data == NULL) {
+    return ERR_NULL;
+  }
+  if (x->n != y->n) {
+    return ERR_DIM;
+  }
+
+  const size_t n = x->n;
+  const double* restrict x_data = x->data;
+  double* restrict y_data = y->data;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    y_data[i] = a * x_data[i] + y_data[i];
+    y_data[i + 1] = a * x_data[i + 1] + y_data[i + 1];
+    y_data[i + 2] = a * x_data[i + 2] + y_data[i + 2];
+    y_data[i + 3] = a * x_data[i + 3] + y_data[i + 3];
+  }
+
+  for (; i < n; ++i) {
+    y_data[i] = a * x_data[i] + y_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
+                             vec_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n || out->n != a->n) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->n;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] * b_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
+                        vec_map_func_t func) {
+  if (src == NULL || dest == NULL || func == NULL) {
+    return ERR_NULL;
+  }
+  if (src->data == NULL || dest->data == NULL) {
+    return ERR_NULL;
+  }
+  if (src->n != dest->n) {
+    return ERR_DIM;
+  }
+
+  const size_t n = src->n;
+  const double* restrict src_data = src->data;
+  double* restrict dest_data = dest->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    double tmp = func(src_data[i]);
+    if (!isfinite(tmp)) {
+      return ERR_RANGE;
+    }
+    dest_data[i] = tmp;
+  }
+
+  return ERR_OK;
+}
+
+util_error_t vec_fill_rc(vec_t* restrict v, double val) {
+  if (v == NULL) {
+    return ERR_NULL;
+  }
+  if (v->data == NULL) {
+    return ERR_NULL;
+  }
+  if (!isfinite(val)) {
+    return ERR_INVALID_ARG;
+  }
+
+  const size_t n = v->n;
+  double* restrict v_data = v->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    v_data[i] = val;
+  }
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*           Vector Products and Geometric Properties           */
+/* ============================================================ */
 
 util_error_t vec_dot_rc(const vec_t* restrict a, const vec_t* restrict b,
                         double* restrict out) {
@@ -364,24 +565,118 @@ util_error_t vec_len_rc(const vec_t* restrict v, double* restrict out) {
   return ERR_OK;
 }
 
-util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest) {
-  if (src == NULL || dest == NULL) {
+util_error_t vec_normalize_inplace_rc(vec_t* restrict v) {
+  if (v == NULL) {
     return ERR_NULL;
   }
-  if (src->data == NULL || dest->data == NULL) {
+
+  double len = 0.0;
+  util_error_t rc = vec_len_rc(v, &len);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  if (len < VEC_EPSILON) {
+    return ERR_DIV_ZERO;
+  }
+
+  double inv_len = 1.0 / len;
+
+  return vec_scale_inplace_rc(v, inv_len);
+}
+
+util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
+                          double* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
   }
-  if (src->n != dest->n) {
+  if (a->data == NULL || b->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n) {
     return ERR_DIM;
   }
 
-  const size_t n = src->n;
-  const double* restrict src_data = src->data;
-  double* restrict dest_data = dest->data;
+  double dot = 0.0;
+  util_error_t rc = vec_dot_rc(a, b, &dot);
+  if (rc != ERR_OK) {
+    return rc;
+  }
 
-  memcpy(dest_data, src_data, n * sizeof(double));
+  double len_a = 0.0;
+  double len_b = 0.0;
+
+  rc = vec_len_rc(a, &len_a);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  rc = vec_len_rc(b, &len_b);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  if (len_a < VEC_EPSILON || len_b < VEC_EPSILON) {
+    return ERR_DIV_ZERO;
+  }
+
+  double cosine = dot / (len_a * len_b);
+
+  if (cosine > 1.0) {
+    cosine = 1.0;
+  }
+  if (cosine < -1.0) {
+    cosine = -1.0;
+  }
+
+  *out = acos(cosine);
   return ERR_OK;
 }
+
+util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
+                            vec_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+  if (a->n != b->n || out->n != b->n) {
+    return ERR_DIM;
+  }
+
+  double dot_ab = 0.0;
+  util_error_t rc = vec_dot_rc(a, b, &dot_ab);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  double dot_bb = 0.0;
+  rc = vec_dot_rc(b, b, &dot_bb);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  if (dot_bb < VEC_EPSILON) {
+    return ERR_DIV_ZERO;
+  }
+
+  double scale = dot_ab / dot_bb;
+
+  const size_t n = b->n;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = scale * b_data[i];
+  }
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                    Comparison and Metrics                    */
+/* ============================================================ */
 
 util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
                              double epsilon, bool* restrict out) {
@@ -408,26 +703,6 @@ util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
 
   *out = true;
   return ERR_OK;
-}
-
-util_error_t vec_normalize_inplace_rc(vec_t* restrict v) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-
-  double len = 0.0;
-  util_error_t rc = vec_len_rc(v, &len);
-  if (rc != ERR_OK) {
-    return rc;
-  }
-
-  if (len < VEC_EPSILON) {
-    return ERR_DIV_ZERO;
-  }
-
-  double inv_len = 1.0 / len;
-
-  return vec_scale_inplace_rc(v, inv_len);
 }
 
 util_error_t vec_dist_rc(const vec_t* restrict a, const vec_t* restrict b,
@@ -527,50 +802,9 @@ util_error_t vec_dist_sq_rc(const vec_t* restrict a, const vec_t* restrict b,
   return ERR_OK;
 }
 
-util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
-                             vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || out->n != a->n) {
-    return ERR_DIM;
-  }
-
-  const size_t n = a->n;
-  const double* restrict a_data = a->data;
-  const double* restrict b_data = b->data;
-  double* restrict out_data = out->data;
-
-  for (size_t i = 0; i < n; ++i) {
-    out_data[i] = a_data[i] * b_data[i];
-  }
-
-  return ERR_OK;
-}
-
-util_error_t vec_fill_rc(vec_t* restrict v, double val) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
-  if (!isfinite(val)) {
-    return ERR_INVALID_ARG;
-  }
-
-  const size_t n = v->n;
-  double* restrict v_data = v->data;
-
-  for (size_t i = 0; i < n; ++i) {
-    v_data[i] = val;
-  }
-
-  return ERR_OK;
-}
+/* ============================================================ */
+/*              Utility and Statistical Functions               */
+/* ============================================================ */
 
 util_error_t vec_min_rc(const vec_t* restrict v, double* restrict out) {
   if (v == NULL) {
@@ -624,158 +858,6 @@ util_error_t vec_max_rc(const vec_t* restrict v, double* restrict out) {
   return ERR_OK;
 }
 
-util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
-                        vec_map_func_t func) {
-  if (src == NULL || dest == NULL || func == NULL) {
-    return ERR_NULL;
-  }
-  if (src->data == NULL || dest->data == NULL) {
-    return ERR_NULL;
-  }
-  if (src->n != dest->n) {
-    return ERR_DIM;
-  }
-
-  const size_t n = src->n;
-  const double* restrict src_data = src->data;
-  double* restrict dest_data = dest->data;
-
-  for (size_t i = 0; i < n; ++i) {
-    double tmp = func(src_data[i]);
-    if (!isfinite(tmp)) {
-      return ERR_RANGE;
-    }
-    dest_data[i] = tmp;
-  }
-
-  return ERR_OK;
-}
-
-util_error_t vec_size_rc(const vec_t* restrict v, size_t* restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  *out = v->n;
-  return ERR_OK;
-}
-
-util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
-  *out = v->data;
-
-  return ERR_OK;
-}
-
-util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
-  if (vp == NULL || *vp == NULL) {
-    return ERR_NULL;
-  }
-
-  if (new_n == 0 || new_n > VECTOR_MAX_ELEMENTS) {
-    return ERR_RANGE;
-  }
-
-  vec_t* v = *vp;
-
-  if (new_n == v->n) {
-    return ERR_OK;
-  }
-
-  size_t new_aligned_bytes = get_aligned_size(new_n);
-
-  double* new_data = (double*)aligned_alloc(ALIGNMENT, new_aligned_bytes);
-  if (new_data == NULL) {
-    return ERR_ALLOC;
-  }
-
-  size_t elements_to_copy = (v->n < new_n) ? v->n : new_n;
-  memcpy(new_data, v->data, elements_to_copy * sizeof(double));
-
-  if (new_n > v->n) {
-    memset(new_data + v->n, 0, (new_n - v->n) * sizeof(double));
-  }
-
-  free(v->data);
-  v->data = new_data;
-  v->n = new_n;
-  return ERR_OK;
-}
-
-util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y) {
-  if (x == NULL || y == NULL) {
-    return ERR_NULL;
-  }
-  if (x->data == NULL || y->data == NULL) {
-    return ERR_NULL;
-  }
-  if (x->n != y->n) {
-    return ERR_DIM;
-  }
-
-  const size_t n = x->n;
-  const double* restrict x_data = x->data;
-  double* restrict y_data = y->data;
-
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    y_data[i] = a * x_data[i] + y_data[i];
-    y_data[i + 1] = a * x_data[i + 1] + y_data[i + 1];
-    y_data[i + 2] = a * x_data[i + 2] + y_data[i + 2];
-    y_data[i + 3] = a * x_data[i + 3] + y_data[i + 3];
-  }
-
-  for (; i < n; ++i) {
-    y_data[i] = a * x_data[i] + y_data[i];
-  }
-
-  return ERR_OK;
-}
-
-util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
-  if (a == NULL || b == NULL) {
-    return ERR_NULL;
-  }
-
-  size_t temp_n = a->n;
-  a->n = b->n;
-  b->n = temp_n;
-
-  double* temp_data = a->data;
-  a->data = b->data;
-  b->data = temp_data;
-
-  return ERR_OK;
-}
-
-util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (v->n != out->n) {
-    return ERR_DIM;
-  }
-
-  const size_t n = v->n;
-  const double* restrict v_data = v->data;
-  double* restrict out_data = out->data;
-
-  for (size_t i = 0; i < n; ++i) {
-    out_data[i] = -v_data[i];
-  }
-
-  return ERR_OK;
-}
-
 util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out) {
   if (v == NULL || out == NULL) {
     return ERR_NULL;
@@ -809,92 +891,38 @@ util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out) {
   return ERR_OK;
 }
 
-util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
-                          double* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
+util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
+  if (a == NULL || b == NULL) {
     return ERR_NULL;
   }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
-  }
 
-  double dot = 0.0;
-  util_error_t rc = vec_dot_rc(a, b, &dot);
-  if (rc != ERR_OK) {
-    return rc;
-  }
+  size_t temp_n = a->n;
+  a->n = b->n;
+  b->n = temp_n;
 
-  double len_a = 0.0;
-  double len_b = 0.0;
+  double* temp_data = a->data;
+  a->data = b->data;
+  b->data = temp_data;
 
-  rc = vec_len_rc(a, &len_a);
-  if (rc != ERR_OK) {
-    return rc;
-  }
-
-  rc = vec_len_rc(b, &len_b);
-  if (rc != ERR_OK) {
-    return rc;
-  }
-
-  if (len_a < VEC_EPSILON || len_b < VEC_EPSILON) {
-    return ERR_DIV_ZERO;
-  }
-
-  double cosine = dot / (len_a * len_b);
-
-  if (cosine > 1.0) {
-    cosine = 1.0;
-  }
-  if (cosine < -1.0) {
-    cosine = -1.0;
-  }
-
-  *out = acos(cosine);
   return ERR_OK;
 }
 
-util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
-                            vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
+util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest) {
+  if (src == NULL || dest == NULL) {
     return ERR_NULL;
   }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+  if (src->data == NULL || dest->data == NULL) {
     return ERR_NULL;
   }
-  if (a->n != b->n || out->n != b->n) {
+  if (src->n != dest->n) {
     return ERR_DIM;
   }
 
-  double dot_ab = 0.0;
-  util_error_t rc = vec_dot_rc(a, b, &dot_ab);
-  if (rc != ERR_OK) {
-    return rc;
-  }
+  const size_t n = src->n;
+  const double* restrict src_data = src->data;
+  double* restrict dest_data = dest->data;
 
-  double dot_bb = 0.0;
-  rc = vec_dot_rc(b, b, &dot_bb);
-  if (rc != ERR_OK) {
-    return rc;
-  }
-
-  if (dot_bb < VEC_EPSILON) {
-    return ERR_DIV_ZERO;
-  }
-
-  double scale = dot_ab / dot_bb;
-
-  const size_t n = b->n;
-  const double* restrict b_data = b->data;
-  double* restrict out_data = out->data;
-
-  for (size_t i = 0; i < n; ++i) {
-    out_data[i] = scale * b_data[i];
-  }
-
+  memcpy(dest_data, src_data, n * sizeof(double));
   return ERR_OK;
 }
 
