@@ -102,7 +102,7 @@ util_error_t mat_set_rc(mat_t* m, size_t i, size_t j, double val) {
   return ERR_OK;
 }
 
-util_error_t mat_get_rc(mat_t* m, size_t i, size_t j, double* out) {
+util_error_t mat_get_rc(const mat_t* m, size_t i, size_t j, double* out) {
   if (m == NULL || m->data == NULL || out == NULL) {
     return ERR_NULL;
   }

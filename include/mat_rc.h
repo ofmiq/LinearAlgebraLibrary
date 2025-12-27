@@ -56,6 +56,6 @@ util_error_t mat_set_rc(mat_t* m, size_t i, size_t j, double val);
  * @param out Pointer to a double where the retrieved value will be stored.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_get_rc(mat_t* m, size_t i, size_t j, double* out);
+util_error_t mat_get_rc(const mat_t* m, size_t i, size_t j, double* out);
 
 #endif  // MAT_RC_H
