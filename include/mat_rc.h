@@ -155,6 +155,32 @@ util_error_t mat_cols_rc(const mat_t* restrict m, size_t* restrict out);
 util_error_t mat_data_rc(const mat_t* restrict m, const double** restrict out);
 
 /* ============================================================ */
+/*                    Initialization Helpers                    */
+/* ============================================================ */
+
+/**
+ * @brief Fills a matrix with a specific value.
+ * @param m Pointer to the matrix.
+ * @param val The value to be used for filling.
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_fill_rc(mat_t* restrict m, double val);
+
+/**
+ * @brief Fills a matrix with zeros.
+ * @param m Pointer to the matrix.
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_zeros_rc(mat_t* restrict m);
+
+/**
+ * @brief Fills a matrix to make it an identity matrix.
+ * @param m Pointer to the matrix.
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_identity_rc(mat_t* restrict m);
+
+/* ============================================================ */
 /*                   Basic Matrix Arithmetic                    */
 /* ============================================================ */
 

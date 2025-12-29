@@ -1,5 +1,6 @@
 #include "mat_rc.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -332,6 +333,57 @@ util_error_t mat_data_rc(const mat_t* restrict m, const double** restrict out) {
   }
 
   *out = m->data;
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                    Initialization Helpers                    */
+/* ============================================================ */
+
+util_error_t mat_fill_rc(mat_t* restrict m, double val) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!isfinite(val)) {
+    return ERR_INVALID_ARG;
+  }
+
+  const size_t n = m->rows * m->cols;
+  double* restrict m_data = m->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    m_data[i] = val;
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_zeros_rc(mat_t* restrict m) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  memset(m->data, 0, m->rows * m->cols * sizeof(double));
+
+  return ERR_OK;
+}
+
+util_error_t mat_identity_rc(mat_t* restrict m) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->rows != m->cols) {
+    return ERR_DIM;
+  }
+
+  memset(m->data, 0, m->rows * m->cols * sizeof(double));
+
+  for (size_t i = 0; i < m->rows; ++i) {
+    m->data[i * m->cols + i] = 1.0;
+  }
+
   return ERR_OK;
 }
 
