@@ -7,7 +7,8 @@
 #include "config.h"
 
 /* internal helper: validate same shape */
-static inline int mat_same_shape(const mat_t* a, const mat_t* b) {
+static inline int mat_same_shape(const mat_t* restrict a,
+                                 const mat_t* restrict b) {
   return a->rows == b->rows && a->cols == b->cols;
 }
 
@@ -15,7 +16,7 @@ static inline int mat_same_shape(const mat_t* a, const mat_t* b) {
 /*                      Lifecycle Management                    */
 /* ============================================================ */
 
-util_error_t mat_alloc_rc(mat_t** out, size_t rows, size_t cols) {
+util_error_t mat_alloc_rc(mat_t** restrict out, size_t rows, size_t cols) {
   if (out == NULL) {
     return ERR_NULL;
   }
@@ -58,8 +59,8 @@ util_error_t mat_alloc_rc(mat_t** out, size_t rows, size_t cols) {
   return ERR_OK;
 }
 
-util_error_t mat_from_array_rc(const double* data, mat_t** out, size_t rows,
-                               size_t cols) {
+util_error_t mat_from_array_rc(const double* restrict data,
+                               mat_t** restrict out, size_t rows, size_t cols) {
   if (out == NULL) {
     return ERR_NULL;
   }
@@ -88,7 +89,7 @@ void mat_free_rc(mat_t* m) {
   free(m);
 }
 
-void mat_freep_rc(mat_t** mp) {
+void mat_freep_rc(mat_t** restrict mp) {
   if (mp == NULL || *mp == NULL) {
     return;
   }
@@ -98,7 +99,8 @@ void mat_freep_rc(mat_t** mp) {
   *mp = NULL;
 }
 
-util_error_t mat_resize_rc(mat_t** mp, size_t new_rows, size_t new_cols) {
+util_error_t mat_resize_rc(mat_t** restrict mp, size_t new_rows,
+                           size_t new_cols) {
   if (mp == NULL || *mp == NULL) {
     return ERR_NULL;
   }
@@ -138,10 +140,13 @@ util_error_t mat_resize_rc(mat_t** mp, size_t new_rows, size_t new_cols) {
   size_t copy_cols = (m->cols < new_cols) ? m->cols : new_cols;
   size_t row_copy_size = copy_cols * sizeof(double);
 
+  const double* restrict src_base = m->data;
+  double* restrict dst_base = new_data;
+
   for (size_t i = 0; i < copy_rows; ++i) {
-    double* src_ptr = m->data + (i * m->cols);
-    double* dst_ptr = new_data + (i * new_cols);
-    memcpy(dst_ptr, src_ptr, row_copy_size);
+    const double* src_row = src_base + (i * m->cols);
+    double* dst_row = dst_base + (i * new_cols);
+    memcpy(dst_row, src_row, row_copy_size);
   }
 
   free(m->data);
@@ -527,18 +532,71 @@ util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
     return ERR_DIM;
   }
 
+  mat_t* b_t = NULL;
+  util_error_t rc = mat_alloc_rc(&b_t, b->cols, b->rows);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  mat_transpose_rc(b, b_t);
+
   const size_t a_rows = a->rows;
-  const size_t b_cols = b->cols;
   const size_t a_cols = a->cols;
+  const size_t out_cols = out->cols;
+
+  const double* restrict a_data = a->data;
+  const double* restrict bt_data = b_t->data;
+  double* restrict out_data = out->data;
 
   for (size_t i = 0; i < a_rows; ++i) {
-    for (size_t j = 0; j < b_cols; ++j) {
+    for (size_t j = 0; j < out_cols; ++j) {
       double sum = 0.0;
+      const double* restrict row_a = &a_data[i * a_cols];
+      const double* restrict row_bt = &bt_data[j * a_cols];
       for (size_t k = 0; k < a_cols; ++k) {
-        sum += MAT_AT(a, i, k) * MAT_AT(b, k, j);
+        sum += row_a[k] * row_bt[k];
       }
-      MAT_AT(out, i, j) = sum;
+      out_data[i * out_cols + j] = sum;
     }
+  }
+
+  mat_free_rc(b_t);
+
+  return ERR_OK;
+}
+
+util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
+                                 const vec_t* restrict v, vec_t* restrict out) {
+  if (m == NULL || v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->data == NULL || v->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->cols != v->n) {
+    return ERR_DIM;
+  }
+
+  if (out->n != m->rows) {
+    return ERR_DIM;
+  }
+
+  const size_t rows = m->rows;
+  const size_t cols = m->cols;
+
+  const double* restrict m_data = m->data;
+  const double* restrict v_data = v->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < rows; ++i) {
+    double sum = 0.0;
+    const double* restrict row_m = &m_data[i * cols];
+    for (size_t j = 0; j < cols; ++j) {
+      sum += row_m[j] * v_data[j];
+    }
+    out_data[i] = sum;
   }
 
   return ERR_OK;
@@ -564,44 +622,13 @@ util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out) {
   const size_t rows = a->rows;
   const size_t cols = a->cols;
 
-  for (size_t i = 0; i < rows; ++i) {
-    for (size_t j = 0; j < cols; ++j) {
-      MAT_AT(out, j, i) = MAT_AT(a, i, j);
-    }
-  }
-
-  return ERR_OK;
-}
-
-util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
-                                 const vec_t* restrict v, vec_t* restrict out) {
-  if (m == NULL || v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->data == NULL || v->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->cols != v->n) {
-    return ERR_DIM;
-  }
-
-  if (out->n != m->rows) {
-    return ERR_DIM;
-  }
-
-  const size_t rows = m->rows;
-  const size_t cols = m->cols;
-  const double* restrict v_data = v->data;
+  const double* restrict a_data = a->data;
   double* restrict out_data = out->data;
 
   for (size_t i = 0; i < rows; ++i) {
-    double sum = 0.0;
     for (size_t j = 0; j < cols; ++j) {
-      sum += MAT_AT(m, i, j) * v_data[j];
+      out_data[j * rows + i] = a_data[i * cols + j];
     }
-    out_data[i] = sum;
   }
 
   return ERR_OK;

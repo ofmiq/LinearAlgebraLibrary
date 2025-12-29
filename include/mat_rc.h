@@ -17,7 +17,7 @@
  * @return ERR_OK on success, or an error code otherwise. On error, *out is left
  * unchanged.
  */
-util_error_t mat_alloc_rc(mat_t** out, size_t rows, size_t cols);
+util_error_t mat_alloc_rc(mat_t** restrict out, size_t rows, size_t cols);
 
 /**
  * @brief Creates a new matrix by copying data from a C array (row-major order).
@@ -28,8 +28,8 @@ util_error_t mat_alloc_rc(mat_t** out, size_t rows, size_t cols);
  * @return ERR_OK on success, or an error code otherwise. On error, *out is left
  * unchanged.
  */
-util_error_t mat_from_array_rc(const double* data, mat_t** out, size_t rows,
-                               size_t cols);
+util_error_t mat_from_array_rc(const double* restrict data,
+                               mat_t** restrict out, size_t rows, size_t cols);
 
 /**
  * @brief Deallocates the memory occupied by the matrix.
@@ -42,7 +42,7 @@ void mat_free_rc(mat_t* m);
  * NULL.
  * @param mp Double pointer to the matrix to be freed.
  */
-void mat_freep_rc(mat_t** mp);
+void mat_freep_rc(mat_t** restrict mp);
 
 /**
  * @brief Changes the size (rows, columns) of a given matrix.
@@ -53,7 +53,7 @@ void mat_freep_rc(mat_t** mp);
  * are zeroed.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_resize_rc(mat_t** mp, size_t new_rows, size_t new_cols);
+util_error_t mat_resize_rc(mat_t** restrict mp, size_t new_rows, size_t new_cols);
 
 /* ============================================================ */
 /*                Data Access and Inspection                    */
