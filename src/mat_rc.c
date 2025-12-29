@@ -515,6 +515,39 @@ util_error_t mat_hadamard_rc(const mat_t* restrict a, const mat_t* restrict b,
   return ERR_OK;
 }
 
+util_error_t mat_map_rc(const mat_t* restrict src, mat_t* restrict dest,
+                        mat_map_func_t func) {
+  if (src == NULL || dest == NULL || func == NULL) {
+    return ERR_NULL;
+  }
+
+  if (src->data == NULL || dest->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(src, dest)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = src->rows * src->cols;
+  const double* restrict s = src->data;
+  double* restrict d = dest->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    double tmp = func(s[i]);
+    if (!isfinite(tmp)) {
+      return ERR_RANGE;
+    }
+    d[i] = tmp;
+  }
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                        Matrix Products                       */
+/* ============================================================ */
+
 util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
                              mat_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
@@ -631,6 +664,25 @@ util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out) {
       out_data[j * rows + i] = a_data[i * cols + j];
     }
   }
+
+  return ERR_OK;
+}
+
+util_error_t mat_reshape_rc(mat_t* restrict m, size_t new_rows,
+                            size_t new_cols) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  size_t old_elements = m->rows * m->cols;
+  size_t new_elements = new_rows * new_cols;
+
+  if (old_elements != new_elements) {
+    return ERR_DIM;
+  }
+
+  m->rows = new_rows;
+  m->cols = new_cols;
 
   return ERR_OK;
 }
