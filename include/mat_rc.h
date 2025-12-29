@@ -76,7 +76,8 @@ util_error_t mat_set_rc(mat_t* m, size_t i, size_t j, double val);
  * @param v Pointer to the source vector.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_set_row(const mat_t* m, size_t row, const vec_t* v);
+util_error_t mat_set_row(mat_t* restrict m, size_t row,
+                         const vec_t* restrict v);
 
 /**
  * @brief Sets the values of a specific column in the matrix using a vector.
@@ -85,7 +86,8 @@ util_error_t mat_set_row(const mat_t* m, size_t row, const vec_t* v);
  * @param v Pointer to the source vector.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_set_column(const mat_t* m, size_t col, const vec_t* v);
+util_error_t mat_set_column(mat_t* restrict m, size_t col,
+                            const vec_t* restrict v);
 
 /**
  * @brief Retrieves the value of an element in the matrix at a specific index.
@@ -104,7 +106,8 @@ util_error_t mat_get_rc(const mat_t* m, size_t i, size_t j, double* out);
  * @param out Pointer to the destination vector.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_get_row(const mat_t* m, size_t row, vec_t* out);
+util_error_t mat_get_row(const mat_t* restrict m, size_t row,
+                         vec_t* restrict out);
 
 /**
  * @brief Retrieves a specific column from the matrix and stores it in a vector.
@@ -113,7 +116,8 @@ util_error_t mat_get_row(const mat_t* m, size_t row, vec_t* out);
  * @param out Pointer to the destination vector.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_get_column(const mat_t* m, size_t col, vec_t* out);
+util_error_t mat_get_column(const mat_t* restrict m, size_t col,
+                            vec_t* restrict out);
 
 /**
  * @brief Retrieves the number of rows in the matrix.
@@ -121,7 +125,7 @@ util_error_t mat_get_column(const mat_t* m, size_t col, vec_t* out);
  * @param out Pointer to a size_t where the number of rows will be stored.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_rows_rc(const mat_t* m, size_t* out);
+util_error_t mat_rows_rc(const mat_t* restrict m, size_t* restrict out);
 
 /**
  * @brief Retrieves the number of columns in the matrix.
@@ -129,7 +133,7 @@ util_error_t mat_rows_rc(const mat_t* m, size_t* out);
  * @param out Pointer to a size_t where the number of columns will be stored.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_cols_rc(const mat_t* m, size_t* out);
+util_error_t mat_cols_rc(const mat_t* restrict m, size_t* restrict out);
 
 /**
  * @brief Provides a pointer to the underlying data array.
@@ -137,7 +141,7 @@ util_error_t mat_cols_rc(const mat_t* m, size_t* out);
  * @param out Double pointer where the pointer to the data will be stored.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t vec_data_rc(const mat_t* m, const double** out);
+util_error_t mat_data_rc(const mat_t* restrict m, const double** restrict out);
 
 /* ============================================================ */
 /*                   Basic Matrix Arithmetic                    */
@@ -151,7 +155,7 @@ util_error_t vec_data_rc(const mat_t* m, const double** out);
  * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* b,
+util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* restrict b,
                         mat_t* restrict out);
 
 /**
@@ -172,7 +176,7 @@ util_error_t mat_add_inplace_rc(mat_t* restrict dest,
  * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* b,
+util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* restrict b,
                              mat_t* restrict out);
 
 /**
@@ -215,8 +219,8 @@ util_error_t mat_scale_inplace_rc(mat_t* restrict dest, double scalar);
  * @param out Pointer to the matrix where the Hadamard product will be stored.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_hadamard_new(const mat_t* restrict a, const mat_t* restrict b,
-                              mat_t* restrict out);
+util_error_t mat_hadamard_rc(const mat_t* restrict a, const mat_t* restrict b,
+                             mat_t* restrict out);
 
 /* ============================================================ */
 /*                        Matrix Products                       */
@@ -243,5 +247,18 @@ util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
  */
 util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
                                  const vec_t* restrict v, vec_t* restrict out);
+
+/* ============================================================ */
+/*                    Matrix transformations                    */
+/* ============================================================ */
+
+/**
+ * @brief Performs matrix transposition.
+ * @param a Pointer to tne matrix
+ * @param out Pointer to the matrix where the transposed matrix will be stored.
+ * @note Argument 'a' and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out);
 
 #endif  // MAT_RC_H

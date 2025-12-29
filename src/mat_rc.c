@@ -11,6 +11,10 @@ static inline int mat_same_shape(const mat_t* a, const mat_t* b) {
   return a->rows == b->rows && a->cols == b->cols;
 }
 
+/* ============================================================ */
+/*                      Lifecycle Management                    */
+/* ============================================================ */
+
 util_error_t mat_alloc_rc(mat_t** out, size_t rows, size_t cols) {
   if (out == NULL) {
     return ERR_NULL;
@@ -94,6 +98,64 @@ void mat_freep_rc(mat_t** mp) {
   *mp = NULL;
 }
 
+util_error_t mat_resize_rc(mat_t** mp, size_t new_rows, size_t new_cols) {
+  if (mp == NULL || *mp == NULL) {
+    return ERR_NULL;
+  }
+
+  if (new_rows == 0 || new_cols == 0) {
+    return ERR_RANGE;
+  }
+
+  mat_t* m = *mp;
+
+  if (new_rows == m->rows && new_cols == m->cols) {
+    return ERR_OK;
+  }
+
+  if (new_rows > MATRIX_MAX_ROWS || new_cols > MATRIX_MAX_COLUMNS) {
+    return ERR_RANGE;
+  }
+
+  if (new_rows > SIZE_MAX / new_cols) {
+    return ERR_RANGE;
+  }
+
+  size_t new_elements = new_rows * new_cols;
+  if (new_elements > MATRIX_MAX_ELEMENTS) {
+    return ERR_RANGE;
+  }
+
+  size_t new_aligned_bytes = get_aligned_size(new_elements);
+  double* new_data = (double*)aligned_alloc(ALIGNMENT, new_aligned_bytes);
+  if (new_data == NULL) {
+    return ERR_ALLOC;
+  }
+
+  memset(new_data, 0, new_elements * sizeof(double));
+
+  size_t copy_rows = (m->rows < new_rows) ? m->rows : new_rows;
+  size_t copy_cols = (m->cols < new_cols) ? m->cols : new_cols;
+  size_t row_copy_size = copy_cols * sizeof(double);
+
+  for (size_t i = 0; i < copy_rows; ++i) {
+    double* src_ptr = m->data + (i * m->cols);
+    double* dst_ptr = new_data + (i * new_cols);
+    memcpy(dst_ptr, src_ptr, row_copy_size);
+  }
+
+  free(m->data);
+  m->data = new_data;
+  m->rows = new_rows;
+  m->cols = new_cols;
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                Data Access and Inspection                    */
+/* ============================================================ */
+
 util_error_t mat_set_rc(mat_t* m, size_t i, size_t j, double val) {
   if (m == NULL || m->data == NULL) {
     return ERR_NULL;
@@ -104,6 +166,63 @@ util_error_t mat_set_rc(mat_t* m, size_t i, size_t j, double val) {
   }
 
   MAT_AT(m, i, j) = val;
+  return ERR_OK;
+}
+
+util_error_t mat_set_row(mat_t* restrict m, size_t row,
+                         const vec_t* restrict v) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (v == NULL || v->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (row >= m->rows) {
+    return ERR_RANGE;
+  }
+
+  if (v->n != m->cols) {
+    return ERR_DIM;
+  }
+
+  double* dest_ptr = m->data + (row * m->cols);
+  memcpy(dest_ptr, v->data, m->cols * sizeof(double));
+
+  return ERR_OK;
+}
+
+util_error_t mat_set_column(mat_t* restrict m, size_t col,
+                            const vec_t* restrict v) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (v == NULL || v->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (col >= m->cols) {
+    return ERR_RANGE;
+  }
+
+  if (v->n != m->rows) {
+    return ERR_DIM;
+  }
+
+  size_t rows = m->rows;
+  size_t cols = m->cols;
+  double* restrict m_data = m->data;
+  const double* restrict v_data = v->data;
+
+  double* current_ptr = m_data + col;
+
+  for (size_t i = 0; i < rows; ++i) {
+    *current_ptr = v_data[i];
+    current_ptr += cols;
+  }
+
   return ERR_OK;
 }
 
@@ -120,7 +239,101 @@ util_error_t mat_get_rc(const mat_t* m, size_t i, size_t j, double* out) {
   return ERR_OK;
 }
 
-util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* b,
+util_error_t mat_get_row(const mat_t* restrict m, size_t row,
+                         vec_t* restrict out) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (out == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (row >= m->rows) {
+    return ERR_RANGE;
+  }
+
+  if (out->n != m->cols) {
+    return ERR_DIM;
+  }
+
+  const double* src_ptr = m->data + (row * m->cols);
+  memcpy(out->data, src_ptr, m->cols * sizeof(double));
+
+  return ERR_OK;
+}
+
+util_error_t mat_get_column(const mat_t* restrict m, size_t col,
+                            vec_t* restrict out) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (out == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (col >= m->cols) {
+    return ERR_RANGE;
+  }
+
+  if (out->n != m->rows) {
+    return ERR_DIM;
+  }
+
+  const size_t rows = m->rows;
+  const size_t stride = m->cols;
+  const double* restrict m_data = m->data;
+  double* restrict v_data = out->data;
+
+  const double* current_src = m_data + col;
+
+  for (size_t i = 0; i < rows; ++i) {
+    v_data[i] = *current_src;
+    current_src += stride;
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_rows_rc(const mat_t* restrict m, size_t* restrict out) {
+  if (m == NULL || m->data == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  *out = m->rows;
+
+  return ERR_OK;
+}
+
+util_error_t mat_cols_rc(const mat_t* restrict m, size_t* restrict out) {
+  if (m == NULL || m->data == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  *out = m->cols;
+
+  return ERR_OK;
+}
+
+util_error_t mat_data_rc(const mat_t* restrict m, const double** restrict out) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (out == NULL) {
+    return ERR_NULL;
+  }
+
+  *out = m->data;
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                   Basic Matrix Arithmetic                    */
+/* ============================================================ */
+
+util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* restrict b,
                         mat_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
@@ -171,7 +384,7 @@ util_error_t mat_add_inplace_rc(mat_t* restrict dest,
   return ERR_OK;
 }
 
-util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* b,
+util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* restrict b,
                              mat_t* restrict out) {
   if (a == NULL || b == NULL || out == NULL) {
     return ERR_NULL;
@@ -222,6 +435,10 @@ util_error_t mat_subtract_inplace_rc(mat_t* restrict dest,
   return ERR_OK;
 }
 
+/* ============================================================ */
+/*              Scalar and Element-wise Operations              */
+/* ============================================================ */
+
 util_error_t mat_scale_rc(const mat_t* restrict a, mat_t* restrict out,
                           double scalar) {
   if (a == NULL || out == NULL) {
@@ -261,6 +478,130 @@ util_error_t mat_scale_inplace_rc(mat_t* restrict dest, double scalar) {
 
   for (size_t i = 0; i < n; ++i) {
     dest_data[i] *= scalar;
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_hadamard_rc(const mat_t* restrict a, const mat_t* restrict b,
+                             mat_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(a, b) || !mat_same_shape(a, out)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->rows * a->cols;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = a_data[i] * b_data[i];
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
+                             mat_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->cols != b->rows) {
+    return ERR_DIM;
+  }
+
+  if (out->rows != a->rows || out->cols != b->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t a_rows = a->rows;
+  const size_t b_cols = b->cols;
+  const size_t a_cols = a->cols;
+
+  for (size_t i = 0; i < a_rows; ++i) {
+    for (size_t j = 0; j < b_cols; ++j) {
+      double sum = 0.0;
+      for (size_t k = 0; k < a_cols; ++k) {
+        sum += MAT_AT(a, i, k) * MAT_AT(b, k, j);
+      }
+      MAT_AT(out, i, j) = sum;
+    }
+  }
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                    Matrix transformations                    */
+/* ============================================================ */
+
+util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out) {
+  if (a == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->rows != out->cols || a->cols != out->rows) {
+    return ERR_DIM;
+  }
+
+  const size_t rows = a->rows;
+  const size_t cols = a->cols;
+
+  for (size_t i = 0; i < rows; ++i) {
+    for (size_t j = 0; j < cols; ++j) {
+      MAT_AT(out, j, i) = MAT_AT(a, i, j);
+    }
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
+                                 const vec_t* restrict v, vec_t* restrict out) {
+  if (m == NULL || v == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->data == NULL || v->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->cols != v->n) {
+    return ERR_DIM;
+  }
+
+  if (out->n != m->rows) {
+    return ERR_DIM;
+  }
+
+  const size_t rows = m->rows;
+  const size_t cols = m->cols;
+  const double* restrict v_data = v->data;
+  double* restrict out_data = out->data;
+
+  for (size_t i = 0; i < rows; ++i) {
+    double sum = 0.0;
+    for (size_t j = 0; j < cols; ++j) {
+      sum += MAT_AT(m, i, j) * v_data[j];
+    }
+    out_data[i] = sum;
   }
 
   return ERR_OK;
