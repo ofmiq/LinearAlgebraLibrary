@@ -161,7 +161,7 @@ util_error_t mat_resize_rc(mat_t** restrict mp, size_t new_rows,
 /*                Data Access and Inspection                    */
 /* ============================================================ */
 
-util_error_t mat_set_rc(mat_t* m, size_t i, size_t j, double val) {
+util_error_t mat_set_rc(mat_t* restrict m, size_t i, size_t j, double val) {
   if (m == NULL || m->data == NULL) {
     return ERR_NULL;
   }
@@ -231,7 +231,8 @@ util_error_t mat_set_column(mat_t* restrict m, size_t col,
   return ERR_OK;
 }
 
-util_error_t mat_get_rc(const mat_t* m, size_t i, size_t j, double* out) {
+util_error_t mat_get_rc(const mat_t* restrict m, size_t i, size_t j,
+                        double* restrict out) {
   if (m == NULL || m->data == NULL || out == NULL) {
     return ERR_NULL;
   }
