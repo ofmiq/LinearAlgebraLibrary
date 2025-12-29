@@ -1,19 +1,16 @@
+#include <config.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-#include <config.h>
+#include "benchmark_utils.h"
 #include "vec.h"
 #include "vec_rc.h"
 
 #define N 1000000  // size of vector
 #define ITER 50    // num of iterations
-
-double get_t(clock_t start) {
-  return ((double)(clock() - start)) / CLOCKS_PER_SEC;
-}
 
 int main() {
   printf("--- TOTAL PERFORMANCE BENCHMARK ---\n");
