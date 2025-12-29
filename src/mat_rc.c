@@ -686,3 +686,124 @@ util_error_t mat_reshape_rc(mat_t* restrict m, size_t new_rows,
 
   return ERR_OK;
 }
+
+/* ============================================================ */
+/*              Properties, Comparison and Utility              */
+/* ============================================================ */
+
+util_error_t mat_is_square_rc(const mat_t* restrict m, bool* restrict out) {
+  if (m == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  *out = (m->rows == m->cols);
+
+  return ERR_OK;
+}
+
+util_error_t mat_is_equal_rc(const mat_t* restrict a, const mat_t* restrict b,
+                             double epsilon, bool* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || b->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(a, b)) {
+    *out = false;
+    return ERR_OK;
+  }
+
+  const size_t n = a->rows * a->cols;
+  const double* restrict a_data = a->data;
+  const double* restrict b_data = b->data;
+
+  for (size_t i = 0; i < n; ++i) {
+    if (fabs(a_data[i] - b_data[i]) > epsilon) {
+      *out = false;
+      return ERR_OK;
+    }
+  }
+
+  *out = true;
+
+  return ERR_OK;
+}
+
+util_error_t mat_sum_rc(const mat_t* restrict m, double* restrict out) {
+  if (m == NULL || m->data == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  const size_t n = m->rows * m->cols;
+  const double* restrict m_data = m->data;
+
+  double sum0 = 0.0;
+  double sum1 = 0.0;
+  double sum2 = 0.0;
+  double sum3 = 0.0;
+
+  size_t i = 0;
+  for (; i + 4 <= n; i += 4) {
+    sum0 += m_data[i];
+    sum1 += m_data[i + 1];
+    sum2 += m_data[i + 2];
+    sum3 += m_data[i + 3];
+  }
+
+  double total_sum = (sum0 + sum1) + (sum2 + sum3);
+  for (; i < n; ++i) {
+    total_sum += m_data[i];
+  }
+
+  *out = total_sum;
+  return ERR_OK;
+}
+
+util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b) {
+  if (a == NULL || b == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a == b) {
+    return ERR_OK;
+  }
+
+  size_t temp_rows = a->rows;
+  a->rows = b->rows;
+  b->rows = temp_rows;
+
+  size_t temp_cols = a->cols;
+  a->cols = b->cols;
+  b->cols = temp_cols;
+
+  double* temp_data = a->data;
+  a->data = b->data;
+  b->data = temp_data;
+
+  return ERR_OK;
+}
+
+util_error_t mat_copy_rc(const mat_t* restrict src, mat_t* restrict dest) {
+  if (src == NULL || dest == NULL) {
+    return ERR_NULL;
+  }
+
+  if (src->data == NULL || dest->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(src, dest)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = src->rows * src->cols;
+  const double* restrict src_data = src->data;
+  double* restrict dest_data = dest->data;
+
+  memcpy(dest_data, src_data, n * sizeof(double));
+
+  return ERR_OK;
+}

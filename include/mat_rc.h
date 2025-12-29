@@ -349,6 +349,18 @@ util_error_t mat_trace_rc(const mat_t* restrict m, double* restrict out);
 util_error_t mat_is_square_rc(const mat_t* restrict m, bool* restrict out);
 
 /**
+ * @brief Compares two matrices for equality within a given permissible error
+ * (epsilon).  
+ * @param a Pointer to the first matrix.  
+ * @param b Pointer to the second matrix.  
+ * @param epsilon Permissible error threshold.
+ * @param out Pointer to a bool where the result will be stored.
+ * @note Arguments 'a', 'b', and 'out' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code.
+ */
+util_error_t mat_is_equal_rc(const mat_t* restrict a, const mat_t* restrict b,
+                             double epsilon, bool* restrict out);
+/**
  * @brief Computes the sum of all elements in the matrix.
  * @param m Pointer to the matrix.
  * @param out Pointer to a double where the result will be stored.
@@ -369,10 +381,10 @@ util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b);
 /**
  * @brief Creates a deep copy of the source matrix.
  * @param src Pointer to the source matrix.
- * @param out Double pointer where the newly allocated copy will be stored.
+ * @param dest Double pointer where the newly allocated copy will be stored.
  * @note Arguments 'src' and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_copy_rc(const mat_t* restrict src, mat_t** restrict out);
+util_error_t mat_copy_rc(const mat_t* restrict src, mat_t* restrict dest);
 
 #endif  // MAT_RC_H
