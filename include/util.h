@@ -24,10 +24,16 @@ typedef enum {
 const char* util_error_str(util_error_t code);
 
 /**
- * @brief Function pointer type for mapping operations.
+ * @brief Function pointer type for vector mapping operations.
  * Takes a double and returns a double (e.g., sin, cos, abs).
  */
 typedef double (*vec_map_func_t)(double);
+
+/**
+ * @brief Function pointer type for matrix mapping operations.
+ * Takes a double and returns a double (e.g., sin, cos, abs).
+ */
+typedef double (*mat_map_func_t)(double);
 
 /**
  * @brief Calculates the aligned memory size in bytes required for n double elements.
