@@ -5,26 +5,50 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "benchmark_utils.h"
 #include "vec.h"
 #include "vec_rc.h"
 
-#define N 1000000  // size of vector
-#define ITER 50    // num of iterations
+#define N 10000000  // size of vector
+#define ITER 1   // num of iterations
+
+static inline double get_wall_time() {
+#ifdef _OPENMP
+  return omp_get_wtime();  // wall-clock time OpenMP
+#else
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec + ts.tv_nsec / 1e9;
+#endif
+}
 
 int main() {
+#ifdef _OPENMP
   printf("--- TOTAL PERFORMANCE BENCHMARK ---\n");
-  clock_t total_start = clock();
-  clock_t s;
+  printf("OpenMP enabled: %d threads\n", omp_get_max_threads());
+#else
+  printf("--- TOTAL PERFORMANCE BENCHMARK ---\n");
+  printf("OpenMP disabled\n");
+#endif
+
+  double total_start = get_wall_time();
+  double s;
   double dummy = 0;
 
   // 1. allocation and initialization
-  s = clock();
+  s = get_wall_time();
   vec_t* v1 = vec_alloc(N);
   vec_t* v2 = vec_alloc(N);
   vec_t* v3 = vec_alloc(N);
   double* arr = malloc(N * sizeof(double));
-  for (size_t i = 0; i < N; i++) arr[i] = (double)i;
+
+  for (size_t i = 0; i < N; i++) {
+    arr[i] = (double)i;
+  }
 
   for (int i = 0; i < ITER; i++) {
     vec_fill(v1, 10.0 + (i % 2));
@@ -37,10 +61,10 @@ int main() {
   }
   vec_t* v_arr = vec_from_array(arr, N);
   dummy += v_arr->data[N - 1];
-  printf("[Init/Alloc/Fill]  Time: %.4f s\n", get_t(s));
+  printf("[Init/Alloc/Fill]  Time: %.4f s\n", get_wall_time() - s);
 
   // 2. getters and setters
-  s = clock();
+  s = get_wall_time();
   double val;
   const double* data_ptr;
   size_t sz;
@@ -57,10 +81,10 @@ int main() {
     vec_data_rc(v2, &data_ptr);
     dummy += data_ptr[0];
   }
-  printf("[Get/Set/Meta]     Time: %.4f s\n", get_t(s));
+  printf("[Get/Set/Meta]     Time: %.4f s\n", get_wall_time() - s);
 
   // 3. in-place arithmetic
-  s = clock();
+  s = get_wall_time();
   for (int i = 0; i < ITER; i++) {
     vec_add_inplace(v1, v2);
     vec_add_inplace_rc(v1, v2);
@@ -71,10 +95,10 @@ int main() {
     vec_axpy_rc(0.1, v1, v2);
     dummy += v1->data[0] + v2->data[0];
   }
-  printf("[Arith. In-place]  Time: %.4f s\n", get_t(s));
+  printf("[Arith. In-place]  Time: %.4f s\n", get_wall_time() - s);
 
   // 4. new arithmetic
-  s = clock();
+  s = get_wall_time();
   for (int i = 0; i < ITER; i++) {
     vec_t* a = vec_add_new(v1, v2);
     vec_t* b = vec_subtract_new(v1, v2);
@@ -90,10 +114,10 @@ int main() {
     vec_free(e);
     vec_free(f);
   }
-  printf("[Arith. New]       Time: %.4f s\n", get_t(s));
+  printf("[Arith. New]       Time: %.4f s\n", get_wall_time() - s);
 
   // 5. geometry and statistics
-  s = clock();
+  s = get_wall_time();
   double res_d;
   for (int i = 0; i < ITER; i++) {
     dummy += vec_dot(v1, v2);
@@ -106,10 +130,10 @@ int main() {
     dummy += vec_max(v1);
     dummy += vec_angle(v1, v2);
   }
-  printf("[Geom/Stats]       Time: %.4f s\n", get_t(s));
+  printf("[Geom/Stats]       Time: %.4f s\n", get_wall_time() - s);
 
   // 6. transformations
-  s = clock();
+  s = get_wall_time();
   for (int i = 0; i < ITER; i++) {
     vec_normalize(v1);
     vec_t* n = vec_normalized_new(v2);
@@ -122,10 +146,10 @@ int main() {
     vec_free(p);
     vec_free(dup);
   }
-  printf("[Transformations]  Time: %.4f s\n", get_t(s));
+  printf("[Transformations]  Time: %.4f s\n", get_wall_time() - s);
 
   // 7. logic and special operations
-  s = clock();
+  s = get_wall_time();
   bool eq;
   for (int i = 0; i < ITER; i++) {
     eq = vec_is_equal(v1, v2, 1e-6);
@@ -146,7 +170,7 @@ int main() {
     dummy += cr->data[0];
     vec_free(cr);
   }
-  printf("[Logic/Resize/Cr]  Time: %.4f s\n", get_t(s));
+  printf("[Logic/Resize/Cr]  Time: %.4f s\n", get_wall_time() - s);
 
   // 8. freeing up memory
   vec_free(v1);
@@ -158,7 +182,7 @@ int main() {
   vec_free(c2);
 
   printf("------------------------------------\n");
-  printf("TOTAL EXECUTION TIME: %.4f s\n", get_t(total_start));
+  printf("TOTAL EXECUTION TIME: %.4f s\n", get_wall_time() - total_start);
   printf("CHECKSUM (to prevent optimization): %f\n", dummy);
   printf("------------------------------------\n");
   printf("\nTotal Benchmark Finished.\n");

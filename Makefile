@@ -32,12 +32,12 @@ TARGET_MATRIX_BENCH = $(BIN_DIR)/matrix_bench
 # FLAGS
 # ============================================================================
 
-CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR)
+CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -fopenmp
 
 CFLAGS += -O3 -march=native -mtune=native -flto \
           -fno-math-errno -fomit-frame-pointer -fno-plt -pipe
 
-LDFLAGS = -lm -flto
+LDFLAGS = -lm -flto -fopenmp
 
 # ============================================================================
 # BUILD MODES
