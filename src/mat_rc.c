@@ -144,6 +144,7 @@ util_error_t mat_resize_rc(mat_t** restrict mp, size_t new_rows,
   const double* restrict src_base = m->data;
   double* restrict dst_base = new_data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < copy_rows; ++i) {
     const double* src_row = src_base + (i * m->cols);
     double* dst_row = dst_base + (i * new_cols);
@@ -410,6 +411,7 @@ util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] + b_data[i];
   }
@@ -435,6 +437,7 @@ util_error_t mat_add_inplace_rc(mat_t* restrict dest,
   double* restrict dest_data = dest->data;
   const double* restrict src_data = src->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     dest_data[i] += src_data[i];
   }
@@ -461,6 +464,7 @@ util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] - b_data[i];
   }
@@ -486,6 +490,7 @@ util_error_t mat_subtract_inplace_rc(mat_t* restrict dest,
   double* restrict dest_data = dest->data;
   const double* restrict src_data = src->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     dest_data[i] -= src_data[i];
   }
@@ -515,6 +520,7 @@ util_error_t mat_scale_rc(const mat_t* restrict a, mat_t* restrict out,
   const double* restrict a_data = a->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] * scalar;
   }
@@ -534,6 +540,7 @@ util_error_t mat_scale_inplace_rc(mat_t* restrict dest, double scalar) {
   const size_t n = dest->rows * dest->cols;
   double* restrict dest_data = dest->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     dest_data[i] *= scalar;
   }
@@ -560,6 +567,7 @@ util_error_t mat_hadamard_rc(const mat_t* restrict a, const mat_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] * b_data[i];
   }
@@ -634,11 +642,13 @@ util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
   const double* restrict bt_data = b_t->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for collapse(2) schedule(static)
   for (size_t i = 0; i < a_rows; ++i) {
     for (size_t j = 0; j < out_cols; ++j) {
       double sum = 0.0;
       const double* restrict row_a = &a_data[i * a_cols];
       const double* restrict row_bt = &bt_data[j * a_cols];
+      #pragma omp simd reduction(+ : sum)
       for (size_t k = 0; k < a_cols; ++k) {
         sum += row_a[k] * row_bt[k];
       }
@@ -675,10 +685,12 @@ util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
   const double* restrict m_data = m->data;
   const double* restrict v_data = v->data;
   double* restrict out_data = out->data;
-
+  
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     double sum = 0.0;
     const double* restrict row_m = &m_data[i * cols];
+    #pragma omp simd reduction(+ : sum)
     for (size_t j = 0; j < cols; ++j) {
       sum += row_m[j] * v_data[j];
     }
@@ -711,6 +723,7 @@ util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out) {
   const double* restrict a_data = a->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for collapse(2) schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     for (size_t j = 0; j < cols; ++j) {
       out_data[j * rows + i] = a_data[i * cols + j];
@@ -791,22 +804,10 @@ util_error_t mat_sum_rc(const mat_t* restrict m, double* restrict out) {
 
   const size_t n = m->rows * m->cols;
   const double* restrict m_data = m->data;
+  double total_sum = 0.0;
 
-  double sum0 = 0.0;
-  double sum1 = 0.0;
-  double sum2 = 0.0;
-  double sum3 = 0.0;
-
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    sum0 += m_data[i];
-    sum1 += m_data[i + 1];
-    sum2 += m_data[i + 2];
-    sum3 += m_data[i + 3];
-  }
-
-  double total_sum = (sum0 + sum1) + (sum2 + sum3);
-  for (; i < n; ++i) {
+  #pragma omp parallel for reduction(+ : total_sum) schedule(static)
+  for (size_t i = 0; i < n; ++i) {
     total_sum += m_data[i];
   }
 

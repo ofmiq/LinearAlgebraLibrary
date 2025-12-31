@@ -185,6 +185,7 @@ util_error_t vec_add_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] + b_data[i];
   }
@@ -208,6 +209,7 @@ util_error_t vec_add_inplace_rc(vec_t* restrict dest,
   double* restrict dest_data = dest->data;
   const double* restrict src_data = src->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     dest_data[i] += src_data[i];
   }
@@ -232,6 +234,7 @@ util_error_t vec_subtract_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] - b_data[i];
   }
@@ -255,6 +258,7 @@ util_error_t vec_subtract_inplace_rc(vec_t* restrict dest,
   double* restrict dest_data = dest->data;
   const double* restrict src_data = src->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     dest_data[i] -= src_data[i];
   }
@@ -277,6 +281,7 @@ util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out) {
   const double* restrict v_data = v->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = -v_data[i];
   }
@@ -304,6 +309,7 @@ util_error_t vec_scale_rc(const vec_t* restrict a, vec_t* restrict out,
   const double* restrict a_data = a->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] * scalar;
   }
@@ -322,6 +328,7 @@ util_error_t vec_scale_inplace_rc(vec_t* restrict v, double scalar) {
   const size_t n = v->n;
   double* restrict v_data = v->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     v_data[i] *= scalar;
   }
@@ -344,15 +351,8 @@ util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y) {
   const double* restrict x_data = x->data;
   double* restrict y_data = y->data;
 
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    y_data[i] = a * x_data[i] + y_data[i];
-    y_data[i + 1] = a * x_data[i + 1] + y_data[i + 1];
-    y_data[i + 2] = a * x_data[i + 2] + y_data[i + 2];
-    y_data[i + 3] = a * x_data[i + 3] + y_data[i + 3];
-  }
-
-  for (; i < n; ++i) {
+  #pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < n; ++i) {
     y_data[i] = a * x_data[i] + y_data[i];
   }
 
@@ -376,6 +376,7 @@ util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = a_data[i] * b_data[i];
   }
@@ -424,6 +425,7 @@ util_error_t vec_fill_rc(vec_t* restrict v, double val) {
   const size_t n = v->n;
   double* restrict v_data = v->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     v_data[i] = val;
   }
@@ -451,26 +453,15 @@ util_error_t vec_dot_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict a_data = a->data;
   const double* restrict b_data = b->data;
 
-  double sum0 = 0.0;
-  double sum1 = 0.0;
-  double sum2 = 0.0;
-  double sum3 = 0.0;
+  double sum = 0.0;
 
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    sum0 += a_data[i] * b_data[i];
-    sum1 += a_data[i + 1] * b_data[i + 1];
-    sum2 += a_data[i + 2] * b_data[i + 2];
-    sum3 += a_data[i + 3] * b_data[i + 3];
+  #pragma omp parallel for reduction(+:sum) schedule(static)
+  for (size_t i = 0; i < n; ++i) {
+    sum += a_data[i] * b_data[i];
   }
 
-  double total_sum = (sum0 + sum1) + (sum2 + sum3);
-
-  for (; i < n; ++i) {
-    total_sum += a_data[i] * b_data[i];
-  }
-
-  *out = total_sum;
+  *out = sum;
+  
   return ERR_OK;
 }
 
@@ -541,26 +532,14 @@ util_error_t vec_len_rc(const vec_t* restrict v, double* restrict out) {
   const size_t n = v->n;
   const double* restrict v_data = v->data;
 
-  double sum0 = 0.0;
-  double sum1 = 0.0;
-  double sum2 = 0.0;
-  double sum3 = 0.0;
+  double sum = 0.0;
 
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    sum0 += v_data[i] * v_data[i];
-    sum1 += v_data[i + 1] * v_data[i + 1];
-    sum2 += v_data[i + 2] * v_data[i + 2];
-    sum3 += v_data[i + 3] * v_data[i + 3];
+  #pragma omp parallel for reduction(+:sum) schedule(static)
+  for (size_t i = 0; i < n; ++i) {
+    sum += v_data[i] * v_data[i];
   }
 
-  double total_sum = (sum0 + sum1) + (sum2 + sum3);
-
-  for (; i < n; ++i) {
-    total_sum += v_data[i] * v_data[i];
-  }
-
-  *out = sqrt(total_sum);
+  *out = sqrt(sum);
 
   return ERR_OK;
 }
@@ -667,6 +646,7 @@ util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict b_data = b->data;
   double* restrict out_data = out->data;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     out_data[i] = scale * b_data[i];
   }
@@ -694,14 +674,17 @@ util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict a_data = a->data;
   const double* restrict b_data = b->data;
 
+  int diff = 0;
+
+  #pragma omp parallel for reduction(|:diff) schedule(static)
   for (size_t i = 0; i < n; ++i) {
     if (fabs(a_data[i] - b_data[i]) > epsilon) {
-      *out = false;
-      return ERR_OK;
+      diff = 1;
     }
   }
 
-  *out = true;
+  *out = (diff == 0);
+  
   return ERR_OK;
 }
 
@@ -721,32 +704,15 @@ util_error_t vec_dist_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict a_data = a->data;
   const double* restrict b_data = b->data;
 
-  double sum0 = 0.0;
-  double sum1 = 0.0;
-  double sum2 = 0.0;
-  double sum3 = 0.0;
+  double sum = 0.0;
 
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    double diff0 = b_data[i] - a_data[i];
-    double diff1 = b_data[i + 1] - a_data[i + 1];
-    double diff2 = b_data[i + 2] - a_data[i + 2];
-    double diff3 = b_data[i + 3] - a_data[i + 3];
-
-    sum0 += diff0 * diff0;
-    sum1 += diff1 * diff1;
-    sum2 += diff2 * diff2;
-    sum3 += diff3 * diff3;
+  #pragma omp parallel for reduction(+:sum) schedule(static)
+  for (size_t i = 0; i < n; ++i) {
+    double d = b_data[i] - a_data[i];
+    sum += d * d;
   }
 
-  double total_sum = (sum0 + sum1) + (sum2 + sum3);
-
-  for (; i < n; ++i) {
-    double diff = b_data[i] - a_data[i];
-    total_sum += diff * diff;
-  }
-
-  *out = sqrt(total_sum);
+  *out = sqrt(sum);
 
   return ERR_OK;
 }
@@ -767,37 +733,15 @@ util_error_t vec_dist_sq_rc(const vec_t* restrict a, const vec_t* restrict b,
   const double* restrict a_data = a->data;
   const double* restrict b_data = b->data;
 
-  double sum0 = 0.0;
-  double sum1 = 0.0;
-  double sum2 = 0.0;
-  double sum3 = 0.0;
+  double sum = 0.0;
 
-  double diff0 = 0.0;
-  double diff1 = 0.0;
-  double diff2 = 0.0;
-  double diff3 = 0.0;
-
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    diff0 = b_data[i] - a_data[i];
-    diff1 = b_data[i + 1] - a_data[i + 1];
-    diff2 = b_data[i + 2] - a_data[i + 2];
-    diff3 = b_data[i + 3] - a_data[i + 3];
-
-    sum0 += diff0 * diff0;
-    sum1 += diff1 * diff1;
-    sum2 += diff2 * diff2;
-    sum3 += diff3 * diff3;
+  #pragma omp parallel for reduction(+:sum) schedule(static)
+  for (size_t i = 0; i < n; ++i) {
+    double d = b_data[i] - a_data[i];
+    sum += d * d;
   }
 
-  double total_sum = (sum0 + sum1) + (sum2 + sum3);
-
-  for (; i < n; ++i) {
-    double diff = b_data[i] - a_data[i];
-    total_sum += diff * diff;
-  }
-
-  *out = total_sum;
+  *out = sum;
 
   return ERR_OK;
 }
@@ -869,25 +813,15 @@ util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out) {
   const size_t n = v->n;
   const double* restrict v_data = v->data;
 
-  double sum0 = 0.0;
-  double sum1 = 0.0;
-  double sum2 = 0.0;
-  double sum3 = 0.0;
+  double sum = 0.0;
 
-  size_t i = 0;
-  for (; i + 4 <= n; i += 4) {
-    sum0 += v_data[i];
-    sum1 += v_data[i + 1];
-    sum2 += v_data[i + 2];
-    sum3 += v_data[i + 3];
+  #pragma omp parallel for reduction(+:sum) schedule(static)
+  for (size_t i = 0; i < n; ++i) {
+    sum += v_data[i];
   }
 
-  double total_sum = (sum0 + sum1) + (sum2 + sum3);
-  for (; i < n; ++i) {
-    total_sum += v_data[i];
-  }
+  *out = sum;
 
-  *out = total_sum;
   return ERR_OK;
 }
 

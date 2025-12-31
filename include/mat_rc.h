@@ -407,7 +407,8 @@ util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b);
 /**
  * @brief Creates a deep copy of the source matrix.
  * @param src Pointer to the source matrix.
- * @param dest Double pointer where the newly allocated copy will be stored.
+ * @param dest Pointer to the matrix where the newly allocated copy will be
+ * stored.
  * @note Arguments 'src' and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code otherwise.
  */
