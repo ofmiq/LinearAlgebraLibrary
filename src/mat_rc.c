@@ -910,6 +910,108 @@ util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
   return ERR_OK;
 }
 
+util_error_t mat_det_rc(const mat_t* restrict m, double* restrict out) {
+  if (m == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->rows != m->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t n = m->rows;
+
+  mat_t* lu = NULL;
+  util_error_t rc = mat_alloc_rc(&lu, n, n);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  size_t* piv = (size_t*)malloc(n * sizeof(size_t));
+  if (piv == NULL) {
+    mat_free_rc(lu);
+    return ERR_ALLOC;
+  }
+
+  int sign = 1;
+
+  rc = mat_lu_decompose_rc(m, lu, piv, &sign);
+  if (rc != ERR_OK) {
+    free(piv);
+    mat_free_rc(lu);
+    if (rc == ERR_SINGULAR) {
+      *out = 0.0;
+      return ERR_OK;
+    }
+    return rc;
+  }
+
+  double det = (double)sign;
+  const double* restrict data = lu->data;
+  const size_t cols = lu->cols;
+
+  for (size_t i = 0; i < n; ++i) {
+    det *= data[i * cols + i];
+  }
+
+  free(piv);
+  mat_free_rc(lu);
+
+  *out = det;
+  return ERR_OK;
+}
+
+util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out) {
+  if (m == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->rows != m->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t n = m->rows;
+
+  size_t* piv = (size_t*)malloc(n * sizeof(size_t));
+  if (piv == NULL) {
+    return ERR_ALLOC;
+  }
+
+  int sign = 1;
+
+  util_error_t rc = mat_lu_decompose_inplace_rc(m, piv, &sign);
+  if (rc != ERR_OK) {
+    free(piv);
+    if (rc == ERR_SINGULAR) {
+      *out = 0.0;
+      return ERR_OK;
+    }
+    return rc;
+  }
+
+  double det = (double)sign;
+  const double* restrict data = m->data;
+  const size_t cols = m->cols;
+
+  for (size_t i = 0; i < n; ++i) {
+    det *= data[i * cols + i];
+  }
+
+  free(piv);
+
+  *out = det;
+  
+  return ERR_OK;
+}
+
 /* ============================================================ */
 /*              Properties, Comparison and Utility              */
 /* ============================================================ */

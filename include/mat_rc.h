@@ -366,6 +366,16 @@ util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
 util_error_t mat_det_rc(const mat_t* restrict m, double* restrict out);
 
 /**
+ * @brief Computes the determinant of the matrix in-place.
+ * @param m Pointer to the matrix (will be modified).
+ * @param out Pointer to a double where the determinant will be stored.
+ * @note Arguments 'm' and 'out' must not overlap (restrict pointers).
+ * @note After calculation, the matrix m contains the LU decomposition.
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out);
+
+/**
  * @brief Computes the inverse of the matrix.
  * @param m Pointer to the source matrix.
  * @param out Pointer to the matrix where the inverse will be stored.
