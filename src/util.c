@@ -8,7 +8,8 @@ static const char* const ERROR_MESSAGES[] = {
     "Dimension/size mismatch or invalid size",  // ERR_DIM (3)
     "Index or value out of range",              // ERR_RANGE (4)
     "Invalid argument",                         // ERR_INVALID_ARG (5)
-    "Division by zero"                          // ERR_DIV_ZERO (6)
+    "Division by zero",                         // ERR_DIV_ZERO (6)
+    "Matrix is singular"                        // ERR_SINGULAR (7)
 };
 
 #define MAX_ERROR_CODE \

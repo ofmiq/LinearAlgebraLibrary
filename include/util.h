@@ -13,7 +13,8 @@ typedef enum {
   ERR_DIM = 3,          ///< 3. Mismatch in sizes, dimensions, or shapes of objects.
   ERR_RANGE = 4,        ///< 4. Index or value outside the valid range.
   ERR_INVALID_ARG = 5,  ///< 5. Invalid argument in the function.
-  ERR_DIV_ZERO = 6      ///< 6. Division by zero.
+  ERR_DIV_ZERO = 6,     ///< 6. Division by zero.
+  ERR_SINGULAR = 7      ///< 7. Matrix is singular.
 } util_error_t;
 
 /**

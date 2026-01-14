@@ -685,7 +685,7 @@ util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
   const double* restrict m_data = m->data;
   const double* restrict v_data = v->data;
   double* restrict out_data = out->data;
-  
+
   #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     double sum = 0.0;
@@ -748,6 +748,164 @@ util_error_t mat_reshape_rc(mat_t* restrict m, size_t new_rows,
 
   m->rows = new_rows;
   m->cols = new_cols;
+
+  return ERR_OK;
+}
+
+/* ============================================================ */
+/*                        Linear Algebra                        */
+/* ============================================================ */
+
+util_error_t mat_lu_decompose_rc(const mat_t* restrict src,
+                                 mat_t* restrict dest, size_t* restrict piv,
+                                 int* restrict sign) {
+  if (src == NULL || dest == NULL || piv == NULL || sign == NULL) {
+    return ERR_NULL;
+  }
+
+  if (src->data == NULL || dest->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (!mat_same_shape(src, dest)) {
+    return ERR_DIM;
+  }
+
+  if (src->rows != src->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t n = src->rows;
+
+  util_error_t rc = mat_copy_rc(src, dest);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  *sign = 1;
+
+  for (size_t i = 0; i < n; ++i) {
+    piv[i] = i;
+  }
+
+  double* restrict data = dest->data;
+  const size_t cols = dest->cols;
+  const double epsilon = 1e-12;
+
+  for (size_t k = 0; k < n; ++k) {
+    size_t pivot_row = k;
+    double max_value = fabs(data[k * cols + k]);
+
+    for (size_t i = k + 1; i < n; ++i) {
+      double current_value = fabs(data[i * cols + k]);
+      if (current_value > max_value) {
+        max_value = current_value;
+        pivot_row = i;
+      }
+    }
+
+    if (max_value < epsilon) {
+      return ERR_SINGULAR;
+    }
+
+    if (pivot_row != k) {
+      rc = mat_swap_rows_rc(dest, k, pivot_row);
+      if (rc != ERR_OK) {
+        return rc;
+      }
+
+      size_t temp_piv = piv[k];
+      piv[k] = piv[pivot_row];
+      piv[pivot_row] = temp_piv;
+
+      *sign = -*sign;
+    }
+
+    const double pivot = data[k * cols + k];
+
+    for (size_t i = k + 1; i < n; ++i) {
+      double multiplier = data[i * cols + k] / pivot;
+      data[i * cols + k] = multiplier;
+
+      for (size_t j = k + 1; j < n; ++j) {
+        data[i * cols + j] =
+            data[i * cols + j] - multiplier * data[k * cols + j];
+      }
+    }
+  }
+
+  return ERR_OK;
+}
+
+util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
+                                         size_t* restrict piv,
+                                         int* restrict sign) {
+  if (a == NULL || piv == NULL || sign == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->rows != a->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->rows;
+
+  *sign = 1;
+
+  for (size_t i = 0; i < n; ++i) {
+    piv[i] = i;
+  }
+
+  double* restrict data = a->data;
+  const size_t cols = a->cols;
+  const double epsilon = 1e-12;
+
+  for (size_t k = 0; k < n; ++k) {
+    size_t pivot_row = k;
+    double max_value = fabs(data[k * cols + k]);
+
+    for (size_t i = k + 1; i < n; ++i) {
+      double current_value = fabs(data[i * cols + k]);
+      if (current_value > max_value) {
+        max_value = current_value;
+        pivot_row = i;
+      }
+    }
+
+    if (max_value < epsilon) {
+      return ERR_SINGULAR;
+    }
+
+    if (pivot_row != k) {
+      util_error_t rc = mat_swap_rows_rc(a, k, pivot_row);
+
+      if (rc != ERR_OK) {
+        return rc;
+      }
+
+      size_t temp_piv = piv[k];
+      piv[k] = piv[pivot_row];
+      piv[pivot_row] = temp_piv;
+
+      *sign = -*sign;
+    }
+
+    const double pivot = data[k * cols + k];
+
+    for (size_t i = k + 1; i < n; ++i) {
+      double multiplier = data[i * cols + k] / pivot;
+      data[i * cols + k] = multiplier;
+
+      for (size_t j = k + 1; j < n; ++j) {
+        data[i * cols + j] =
+            data[i * cols + j] - multiplier * data[k * cols + j];
+      }
+    }
+  }
 
   return ERR_OK;
 }
@@ -835,6 +993,33 @@ util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b) {
   double* temp_data = a->data;
   a->data = b->data;
   b->data = temp_data;
+
+  return ERR_OK;
+}
+
+util_error_t mat_swap_rows_rc(mat_t* restrict m, size_t row_a, size_t row_b) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (row_a >= m->rows || row_b >= m->rows) {
+    return ERR_RANGE;
+  }
+
+  if (row_a == row_b) {
+    return ERR_OK;
+  }
+
+  const size_t cols = m->cols;
+  double* restrict data = m->data;
+  double* restrict r1 = data + (row_a * cols);
+  double* restrict r2 = data + (row_b * cols);
+
+  for (size_t j = 0; j < cols; ++j) {
+    double temp = r1[j];
+    r1[j] = r2[j];
+    r2[j] = temp;
+  }
 
   return ERR_OK;
 }

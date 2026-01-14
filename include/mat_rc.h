@@ -325,6 +325,38 @@ util_error_t mat_reshape_rc(mat_t* restrict m, size_t new_rows,
 /* ============================================================ */
 
 /**
+ * @brief Performs LU decomposition of a matrix with partial pivoting.
+ * @param src Pointer to the source matrix.
+ * @param dest Pointer to the matrix where the LU factors will be stored.
+ * @param piv Pointer to an array of size_t to store the permutation indices.
+ * @param sign Pointer to an integer where the sign of the permutation will be
+ * stored.
+ * @note The combined LU factors are stored in 'dest': L (lower triangular) with
+ * unit diagonal and U (upper triangular).
+ * @note Arguments 'src', 'dest', 'piv', and 'sign' must not overlap (restrict
+ * pointers).
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_lu_decompose_rc(const mat_t* restrict src,
+                                 mat_t* restrict dest, size_t* restrict piv,
+                                 int* restrict sign);
+
+/**
+ * @brief Performs LU decomposition of a matrix in-place with partial pivoting.
+ * @param a Pointer to the matrix to be decomposed (will be modified).
+ * @param piv Pointer to an array of size_t to store the permutation indices.
+ * @param sign Pointer to an integer where the sign of the permutation will be
+ * stored.
+ * @note The matrix 'a' is replaced by its LU factors: L (lower triangular) with
+ * unit diagonal and U (upper triangular).
+ * @note Arguments 'a', 'piv', and 'sign' must not overlap (restrict pointers).
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
+                                         size_t* restrict piv,
+                                         int* restrict sign);
+
+/**
  * @brief Computes the determinant of the matrix.
  * @param m Pointer to the matrix.
  * @param out Pointer to a double where the determinant will be stored.
@@ -403,6 +435,15 @@ util_error_t mat_sum_rc(const mat_t* restrict m, double* restrict out);
  * @return ERR_OK on success, or an error code otherwise.
  */
 util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b);
+
+/**
+ * @brief Swaps two rows in a matrix.
+ * @param m Pointer to the matrix.
+ * @param row_a Index of the first row.
+ * @param row_b Index of the second row.
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_swap_rows_rc(mat_t* restrict m, size_t row_a, size_t row_b);
 
 /**
  * @brief Creates a deep copy of the source matrix.
