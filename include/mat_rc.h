@@ -385,6 +385,13 @@ util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out);
 util_error_t mat_inverse_rc(const mat_t* restrict m, mat_t* restrict out);
 
 /**
+ * @brief Computes the inverse of the matrix (in-place).
+ * @param m Pointer to the source matrix (will be changed).
+ * @return ERR_OK on success, or an error code otherwise.
+ */
+util_error_t mat_inverse_inplace_rc(mat_t* restrict m);
+
+/**
  * @brief Solves a system of linear equations (Ax = b).
  * @param a Pointer to the coefficient matrix.
  * @param b Pointer to the right-hand side vector.

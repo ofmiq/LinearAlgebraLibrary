@@ -1008,7 +1008,110 @@ util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out) {
   free(piv);
 
   *out = det;
+
+  return ERR_OK;
+}
+
+util_error_t mat_inverse_rc(const mat_t* restrict m, mat_t* restrict out) {
+  if (m == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->rows != m->cols) {
+    return ERR_DIM;
+  }
+
+  if (!mat_same_shape(m, out)) {
+    return ERR_DIM;
+  }
+
+  const size_t n = m->rows;
+
+  mat_t* lu = NULL;
+  util_error_t rc = mat_alloc_rc(&lu, n, n);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  size_t* piv = (size_t*)malloc(n * sizeof(size_t));
+  if (piv == NULL) {
+    mat_free_rc(lu);
+    return rc;
+  }
+
+  int sign = 1;
+
+  rc = mat_lu_decompose_rc(m, lu, piv, &sign);
+  if (rc != ERR_OK) {
+    free(piv);
+    mat_free_rc(lu);
+    return rc;
+  }
+
+  double* restrict lu_data = lu->data;
+  double* restrict out_data = out->data;
+  const size_t lu_cols = lu->cols;
   
+  for (size_t j = 0; j < n; ++j) {
+    for (size_t i = 0; i < n; ++i) {
+      out_data[i * lu_cols + j] = (piv[i] == j) ? 1.0 : 0.0;
+    }
+
+    for (size_t i = 0; i < n; ++i) {
+      for (size_t k = 0; k < i; ++k) {
+        out_data[i * lu_cols + j] -= lu_data[i * lu_cols + k] * out_data[k * lu_cols + j];
+      }
+    }
+
+    for (size_t i = n; i-- > 0;) {
+      for (size_t k = i + 1; k < n; ++k) {
+        out_data[i * lu_cols + j] -= lu_data[i * lu_cols + k] * out_data[k * lu_cols + j];
+      }
+      out_data[i * lu_cols + j] /= lu_data[i * lu_cols + i];
+    }
+  }
+
+  free(piv);
+  mat_free_rc(lu);
+
+  return ERR_OK;
+}
+
+util_error_t mat_inverse_inplace_rc(mat_t* restrict m) {
+  if (m == NULL || m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->rows != m->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t n = m->rows;
+
+  mat_t* temp = NULL;
+  util_error_t rc = mat_alloc_rc(&temp, n, n);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  rc = mat_copy_rc(m, temp);
+  if (rc != ERR_OK) {
+    mat_free_rc(temp);
+    return rc;
+  }
+
+  rc = mat_inverse_rc(temp, m);
+  if (rc != ERR_OK) {
+    mat_free_rc(temp);
+    return rc;
+  }
+
+  mat_free_rc(temp);
+
   return ERR_OK;
 }
 
