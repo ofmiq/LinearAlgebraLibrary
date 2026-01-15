@@ -46,9 +46,9 @@ LDFLAGS = -lm -flto -fopenmp
 all: CFLAGS += -DNDEBUG
 all: $(TARGET_VECTOR_BENCH) $(TARGET_MATRIX_BENCH)
 
-debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR)
+debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -fopenmp
 debug: CFLAGS += -O0 -g -ggdb3 -fsanitize=address -fsanitize=undefined -fsanitize=leak
-debug: LDFLAGS = -lm -fsanitize=address -fsanitize=undefined -fsanitize=leak
+debug: LDFLAGS = -lm -fopenmp -fsanitize=address -fsanitize=undefined -fsanitize=leak
 debug: $(TARGET_VECTOR_BENCH) $(TARGET_MATRIX_BENCH)
 
 release: CFLAGS += -DNDEBUG
@@ -87,15 +87,15 @@ benchmark: all
 		./$(TARGET_MATRIX_BENCH) | tail -10; \
 	done
 
-profile-vector: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR)
+profile-vector: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -fopenmp
 profile-vector: CFLAGS += -O2 -pg
-profile-vector: LDFLAGS = -lm -pg
+profile-vector: LDFLAGS = -lm -fopenmp -pg
 profile-vector: clean $(TARGET_VECTOR_BENCH)
 	@echo "Run './$(TARGET_VECTOR_BENCH)' then 'gprof $(TARGET_VECTOR_BENCH) gmon.out'"
 
-profile-matrix: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR)
+profile-matrix: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -fopenmp
 profile-matrix: CFLAGS += -O2 -pg
-profile-matrix: LDFLAGS = -lm -pg
+profile-matrix: LDFLAGS = -lm -fopenmp -pg
 profile-matrix: clean $(TARGET_MATRIX_BENCH)
 	@echo "Run './$(TARGET_MATRIX_BENCH)' then 'gprof $(TARGET_MATRIX_BENCH) gmon.out'"
 
