@@ -1206,7 +1206,7 @@ util_error_t mat_trace_rc(const mat_t* restrict m, double* restrict out) {
   const size_t m_cols = m->cols;
   double trace = 0.0;
 
-  for (int i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     trace += m_data[i * m_cols + i];
   }
 
