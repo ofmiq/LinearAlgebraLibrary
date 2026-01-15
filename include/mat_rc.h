@@ -401,6 +401,7 @@ util_error_t mat_inverse_inplace_rc(mat_t* restrict m);
  */
 util_error_t mat_solve_rc(const mat_t* restrict a, const vec_t* restrict b,
                           vec_t* restrict out);
+                          
 /**
  * @brief Computes the trace of the matrix.
  * @param m Pointer to the matrix.

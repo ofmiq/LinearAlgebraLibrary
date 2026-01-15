@@ -1115,6 +1115,79 @@ util_error_t mat_inverse_inplace_rc(mat_t* restrict m) {
   return ERR_OK;
 }
 
+util_error_t mat_solve_rc(const mat_t* restrict a, const vec_t* restrict b,
+                          vec_t* restrict out) {
+  if (a == NULL || b == NULL || out == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->data == NULL || b->data == NULL || out->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (a->rows != a->cols) {
+    return ERR_DIM;
+  }
+
+  if (a->rows != b->n) {
+    return ERR_DIM;
+  }
+
+  if (out->n != b->n) {
+    return ERR_DIM;
+  }
+
+  const size_t n = a->rows;
+
+  mat_t* lu = NULL;
+  util_error_t rc = mat_alloc_rc(&lu, n, n);
+  if (rc != ERR_OK) {
+    return rc;
+  }
+
+  size_t* piv = (size_t*)malloc(n * sizeof(size_t));
+  if (piv == NULL) {
+    mat_free_rc(lu);
+    return ERR_ALLOC;
+  }
+
+  int sign = 1;
+
+  rc = mat_lu_decompose_rc(a, lu, piv, &sign);
+  if (rc != ERR_OK) {
+    free(piv);
+    mat_free_rc(lu);
+    return rc;
+  }
+
+  const double* restrict lu_data = lu->data;
+  const double* restrict b_data = b->data;
+  double* restrict out_data = out->data;
+  const size_t cols = lu->cols;
+
+  for (size_t i = 0; i < n; ++i) {
+    out_data[i] = b_data[piv[i]];
+  }
+
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t k = 0; k < i; ++k) {
+      out_data[i] -= lu_data[i * cols + k] * out_data[k];
+    }
+  }
+
+  for (size_t i = n; i-- > 0;) {
+    for (size_t k = i + 1; k < n; ++k) {
+      out_data[i] -= lu_data[i * cols + k] * out_data[k];
+    }
+    out_data[i] /= lu_data[i * cols + i];
+  }
+
+  free(piv);
+  mat_free_rc(lu);
+
+  return ERR_OK;
+}
+
 /* ============================================================ */
 /*              Properties, Comparison and Utility              */
 /* ============================================================ */
