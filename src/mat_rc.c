@@ -1188,6 +1188,33 @@ util_error_t mat_solve_rc(const mat_t* restrict a, const vec_t* restrict b,
   return ERR_OK;
 }
 
+util_error_t mat_trace_rc(const mat_t* restrict m, double* restrict out) {
+  if (m == NULL || out == NULL) {
+    return ERR_NULL;
+  } 
+
+  if (m->data == NULL) {
+    return ERR_NULL;
+  }
+
+  if (m->rows != m->cols) {
+    return ERR_DIM;
+  }
+
+  const size_t n = m->rows;
+  const double* restrict m_data = m->data;
+  const size_t m_cols = m->cols;
+  double trace = 0.0;
+
+  for (int i = 0; i < n; ++i) {
+    trace += m_data[i * m_cols + i];
+  }
+
+  *out = trace;
+
+  return ERR_OK;
+}
+
 /* ============================================================ */
 /*              Properties, Comparison and Utility              */
 /* ============================================================ */
