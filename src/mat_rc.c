@@ -6,21 +6,15 @@
 #include <string.h>
 
 #include "config.h"
-
-/* internal helper: validate same shape */
-static inline int mat_same_shape(const mat_t* restrict a,
-                                 const mat_t* restrict b) {
-  return a->rows == b->rows && a->cols == b->cols;
-}
+#include "mat_internal.h"
+#include "vec_internal.h"
 
 /* ============================================================ */
 /*                      Lifecycle Management                    */
 /* ============================================================ */
 
 util_error_t mat_alloc_rc(mat_t** restrict out, size_t rows, size_t cols) {
-  if (out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL(out);
 
   if (rows == 0 || cols == 0) {
     return ERR_RANGE;
@@ -62,13 +56,7 @@ util_error_t mat_alloc_rc(mat_t** restrict out, size_t rows, size_t cols) {
 
 util_error_t mat_from_array_rc(const double* restrict data,
                                mat_t** restrict out, size_t rows, size_t cols) {
-  if (out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(data, out);
 
   util_error_t rc = mat_alloc_rc(out, rows, cols);
   if (rc != ERR_OK) {
@@ -102,9 +90,8 @@ void mat_freep_rc(mat_t** restrict mp) {
 
 util_error_t mat_resize_rc(mat_t** restrict mp, size_t new_rows,
                            size_t new_cols) {
-  if (mp == NULL || *mp == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL(mp);
+  MAT_REQUIRE_VALID_MAT(*mp);
 
   if (new_rows == 0 || new_cols == 0) {
     return ERR_RANGE;
@@ -164,9 +151,7 @@ util_error_t mat_resize_rc(mat_t** restrict mp, size_t new_rows,
 /* ============================================================ */
 
 util_error_t mat_set_rc(mat_t* restrict m, size_t i, size_t j, double val) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
   if (i >= m->rows || j >= m->cols) {
     return ERR_RANGE;
@@ -178,13 +163,8 @@ util_error_t mat_set_rc(mat_t* restrict m, size_t i, size_t j, double val) {
 
 util_error_t mat_set_row(mat_t* restrict m, size_t row,
                          const vec_t* restrict v) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (v == NULL || v->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  VEC_REQUIRE_VALID_VEC(v);
 
   if (row >= m->rows) {
     return ERR_RANGE;
@@ -202,13 +182,8 @@ util_error_t mat_set_row(mat_t* restrict m, size_t row,
 
 util_error_t mat_set_column(mat_t* restrict m, size_t col,
                             const vec_t* restrict v) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (v == NULL || v->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  VEC_REQUIRE_VALID_VEC(v);
 
   if (col >= m->cols) {
     return ERR_RANGE;
@@ -236,9 +211,8 @@ util_error_t mat_set_column(mat_t* restrict m, size_t col,
 
 util_error_t mat_get_rc(const mat_t* restrict m, size_t i, size_t j,
                         double* restrict out) {
-  if (m == NULL || m->data == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  MAT_REQUIRE_NON_NULL(out);
 
   if (i >= m->rows || j >= m->cols) {
     return ERR_RANGE;
@@ -250,13 +224,8 @@ util_error_t mat_get_rc(const mat_t* restrict m, size_t i, size_t j,
 
 util_error_t mat_get_row(const mat_t* restrict m, size_t row,
                          vec_t* restrict out) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (out == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  VEC_REQUIRE_VALID_VEC(out);
 
   if (row >= m->rows) {
     return ERR_RANGE;
@@ -274,13 +243,8 @@ util_error_t mat_get_row(const mat_t* restrict m, size_t row,
 
 util_error_t mat_get_column(const mat_t* restrict m, size_t col,
                             vec_t* restrict out) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (out == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  VEC_REQUIRE_VALID_VEC(out);
 
   if (col >= m->cols) {
     return ERR_RANGE;
@@ -307,9 +271,8 @@ util_error_t mat_get_column(const mat_t* restrict m, size_t col,
 }
 
 util_error_t mat_rows_rc(const mat_t* restrict m, size_t* restrict out) {
-  if (m == NULL || m->data == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  MAT_REQUIRE_NON_NULL(out);
 
   *out = m->rows;
 
@@ -317,9 +280,8 @@ util_error_t mat_rows_rc(const mat_t* restrict m, size_t* restrict out) {
 }
 
 util_error_t mat_cols_rc(const mat_t* restrict m, size_t* restrict out) {
-  if (m == NULL || m->data == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  MAT_REQUIRE_NON_NULL(out);
 
   *out = m->cols;
 
@@ -327,13 +289,8 @@ util_error_t mat_cols_rc(const mat_t* restrict m, size_t* restrict out) {
 }
 
 util_error_t mat_data_rc(const mat_t* restrict m, const double** restrict out) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  MAT_REQUIRE_NON_NULL(out);
 
   *out = m->data;
   return ERR_OK;
@@ -344,9 +301,7 @@ util_error_t mat_data_rc(const mat_t* restrict m, const double** restrict out) {
 /* ============================================================ */
 
 util_error_t mat_fill_rc(mat_t* restrict m, double val) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
   if (!isfinite(val)) {
     return ERR_INVALID_ARG;
@@ -364,9 +319,7 @@ util_error_t mat_fill_rc(mat_t* restrict m, double val) {
 }
 
 util_error_t mat_zeros_rc(mat_t* restrict m) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
   memset(m->data, 0, m->rows * m->cols * sizeof(double));
 
@@ -374,12 +327,11 @@ util_error_t mat_zeros_rc(mat_t* restrict m) {
 }
 
 util_error_t mat_identity_rc(mat_t* restrict m) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
-  if (m->rows != m->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(m);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   memset(m->data, 0, m->rows * m->cols * sizeof(double));
@@ -398,16 +350,17 @@ util_error_t mat_identity_rc(mat_t* restrict m) {
 
 util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* restrict b,
                         mat_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  MAT_REQUIRE_NON_NULL_3(a, b, out);
+  MAT_REQUIRE_VALID_MAT_3(a, b, out);
+
+  util_error_t rc = mat_same_shape(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(a, b) || !mat_same_shape(a, out)) {
-    return ERR_DIM;
+  rc = mat_same_shape(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->rows * a->cols;
@@ -425,16 +378,12 @@ util_error_t mat_add_rc(const mat_t* restrict a, const mat_t* restrict b,
 
 util_error_t mat_add_inplace_rc(mat_t* restrict dest,
                                 const mat_t* restrict src) {
-  if (dest == NULL || src == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(dest, src);
+  MAT_REQUIRE_VALID_MAT_2(dest, src);
 
-  if (dest->data == NULL || src->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(dest, src)) {
-    return ERR_DIM;
+  util_error_t rc = mat_same_shape(dest, src);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = dest->rows * dest->cols;
@@ -451,16 +400,17 @@ util_error_t mat_add_inplace_rc(mat_t* restrict dest,
 
 util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* restrict b,
                              mat_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  MAT_REQUIRE_NON_NULL_3(a, b, out);
+  MAT_REQUIRE_VALID_MAT_3(a, b, out);
+
+  util_error_t rc = mat_same_shape(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(a, b) || !mat_same_shape(a, out)) {
-    return ERR_DIM;
+  rc = mat_same_shape(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->rows * a->cols;
@@ -478,16 +428,12 @@ util_error_t mat_subtract_rc(const mat_t* restrict a, const mat_t* restrict b,
 
 util_error_t mat_subtract_inplace_rc(mat_t* restrict dest,
                                      const mat_t* restrict src) {
-  if (dest == NULL || src == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(dest, src);
+  MAT_REQUIRE_VALID_MAT_2(dest, src);
 
-  if (dest->data == NULL || src->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(dest, src)) {
-    return ERR_DIM;
+  util_error_t rc = mat_same_shape(dest, src);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = dest->rows * dest->cols;
@@ -508,16 +454,12 @@ util_error_t mat_subtract_inplace_rc(mat_t* restrict dest,
 
 util_error_t mat_scale_rc(const mat_t* restrict a, mat_t* restrict out,
                           double scalar) {
-  if (a == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(a, out);
+  MAT_REQUIRE_VALID_MAT_2(a, out);
 
-  if (a->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(a, out)) {
-    return ERR_DIM;
+  util_error_t rc = mat_same_shape(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->rows * a->cols;
@@ -533,13 +475,7 @@ util_error_t mat_scale_rc(const mat_t* restrict a, mat_t* restrict out,
 }
 
 util_error_t mat_scale_inplace_rc(mat_t* restrict dest, double scalar) {
-  if (dest == NULL) {
-    return ERR_NULL;
-  }
-
-  if (dest->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(dest);
 
   const size_t n = dest->rows * dest->cols;
   double* restrict dest_data = dest->data;
@@ -554,16 +490,17 @@ util_error_t mat_scale_inplace_rc(mat_t* restrict dest, double scalar) {
 
 util_error_t mat_hadamard_rc(const mat_t* restrict a, const mat_t* restrict b,
                              mat_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  MAT_REQUIRE_NON_NULL_3(a, b, out);
+  MAT_REQUIRE_VALID_MAT_3(a, b, out);
+
+  util_error_t rc = mat_same_shape(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(a, b) || !mat_same_shape(a, out)) {
-    return ERR_DIM;
+  rc = mat_same_shape(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->rows * a->cols;
@@ -581,16 +518,12 @@ util_error_t mat_hadamard_rc(const mat_t* restrict a, const mat_t* restrict b,
 
 util_error_t mat_map_rc(const mat_t* restrict src, mat_t* restrict dest,
                         mat_map_func_t func) {
-  if (src == NULL || dest == NULL || func == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_3(src, dest, func);
+  MAT_REQUIRE_VALID_MAT_2(src, dest);
 
-  if (src->data == NULL || dest->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(src, dest)) {
-    return ERR_DIM;
+  util_error_t rc = mat_same_shape(src, dest);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = src->rows * src->cols;
@@ -614,13 +547,8 @@ util_error_t mat_map_rc(const mat_t* restrict src, mat_t* restrict dest,
 
 util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
                              mat_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_3(a, b, out);
+  MAT_REQUIRE_VALID_MAT_3(a, b, out);
 
   if (a->cols != b->rows) {
     return ERR_DIM;
@@ -667,13 +595,9 @@ util_error_t mat_multiply_rc(const mat_t* restrict a, const mat_t* restrict b,
 
 util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
                                  const vec_t* restrict v, vec_t* restrict out) {
-  if (m == NULL || v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->data == NULL || v->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
+  VEC_REQUIRE_VALID_VEC_2(v, out);
+  MAT_REQUIRE_NON_NULL(out);
 
   if (m->cols != v->n) {
     return ERR_DIM;
@@ -709,13 +633,8 @@ util_error_t mat_vec_multiply_rc(const mat_t* restrict m,
 /* ============================================================ */
 
 util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out) {
-  if (a == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (a->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(a, out);
+  MAT_REQUIRE_VALID_MAT_2(a, out);
 
   if (a->rows != out->cols || a->cols != out->rows) {
     return ERR_DIM;
@@ -739,9 +658,7 @@ util_error_t mat_transpose_rc(const mat_t* restrict a, mat_t* restrict out) {
 
 util_error_t mat_reshape_rc(mat_t* restrict m, size_t new_rows,
                             size_t new_cols) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
   size_t old_elements = m->rows * m->cols;
   size_t new_elements = new_rows * new_cols;
@@ -763,25 +680,23 @@ util_error_t mat_reshape_rc(mat_t* restrict m, size_t new_rows,
 util_error_t mat_lu_decompose_rc(const mat_t* restrict src,
                                  mat_t* restrict dest, size_t* restrict piv,
                                  int* restrict sign) {
-  if (src == NULL || dest == NULL || piv == NULL || sign == NULL) {
-    return ERR_NULL;
+  MAT_REQUIRE_NON_NULL_3(src, dest, piv);
+  MAT_REQUIRE_NON_NULL(sign);
+  MAT_REQUIRE_VALID_MAT_2(src, dest);
+
+  util_error_t rc = mat_same_shape(src, dest);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
-  if (src->data == NULL || dest->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(src, dest)) {
-    return ERR_DIM;
-  }
-
-  if (src->rows != src->cols) {
-    return ERR_DIM;
+  rc = mat_require_square(src);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = src->rows;
 
-  util_error_t rc = mat_copy_rc(src, dest);
+  rc = mat_copy_rc(src, dest);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -845,16 +760,12 @@ util_error_t mat_lu_decompose_rc(const mat_t* restrict src,
 util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
                                          size_t* restrict piv,
                                          int* restrict sign) {
-  if (a == NULL || piv == NULL || sign == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_3(a, piv, sign);
+  MAT_REQUIRE_VALID_MAT(a);
 
-  if (a->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (a->rows != a->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(a);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->rows;
@@ -886,7 +797,7 @@ util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
     }
 
     if (pivot_row != k) {
-      util_error_t rc = mat_swap_rows_rc(a, k, pivot_row);
+      rc = mat_swap_rows_rc(a, k, pivot_row);
 
       if (rc != ERR_OK) {
         return rc;
@@ -916,22 +827,18 @@ util_error_t mat_lu_decompose_inplace_rc(mat_t* restrict a,
 }
 
 util_error_t mat_det_rc(const mat_t* restrict m, double* restrict out) {
-  if (m == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(m, out);
+  MAT_REQUIRE_VALID_MAT(m);
 
-  if (m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->rows != m->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(m);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = m->rows;
 
   mat_t* lu = NULL;
-  util_error_t rc = mat_alloc_rc(&lu, n, n);
+  rc = mat_alloc_rc(&lu, n, n);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -971,16 +878,12 @@ util_error_t mat_det_rc(const mat_t* restrict m, double* restrict out) {
 }
 
 util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out) {
-  if (m == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(m, out);
+  MAT_REQUIRE_VALID_MAT(m);
 
-  if (m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->rows != m->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(m);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = m->rows;
@@ -992,7 +895,7 @@ util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out) {
 
   int sign = 1;
 
-  util_error_t rc = mat_lu_decompose_inplace_rc(m, piv, &sign);
+  rc = mat_lu_decompose_inplace_rc(m, piv, &sign);
   if (rc != ERR_OK) {
     free(piv);
     if (rc == ERR_SINGULAR) {
@@ -1018,26 +921,23 @@ util_error_t mat_det_inplace_rc(mat_t* restrict m, double* restrict out) {
 }
 
 util_error_t mat_inverse_rc(const mat_t* restrict m, mat_t* restrict out) {
-  if (m == NULL || out == NULL) {
-    return ERR_NULL;
+  MAT_REQUIRE_NON_NULL_2(m, out);
+  MAT_REQUIRE_VALID_MAT_2(m, out);
+
+  util_error_t rc = mat_require_square(m);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
-  if (m->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->rows != m->cols) {
-    return ERR_DIM;
-  }
-
-  if (!mat_same_shape(m, out)) {
-    return ERR_DIM;
+  rc = mat_same_shape(m, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = m->rows;
 
   mat_t* lu = NULL;
-  util_error_t rc = mat_alloc_rc(&lu, n, n);
+  rc = mat_alloc_rc(&lu, n, n);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -1099,18 +999,17 @@ util_error_t mat_inverse_rc(const mat_t* restrict m, mat_t* restrict out) {
 }
 
 util_error_t mat_inverse_inplace_rc(mat_t* restrict m) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
-  if (m->rows != m->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(m);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = m->rows;
 
   mat_t* temp = NULL;
-  util_error_t rc = mat_alloc_rc(&temp, n, n);
+  rc = mat_alloc_rc(&temp, n, n);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -1134,16 +1033,13 @@ util_error_t mat_inverse_inplace_rc(mat_t* restrict m) {
 
 util_error_t mat_solve_rc(const mat_t* restrict a, const vec_t* restrict b,
                           vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(a);
+  VEC_REQUIRE_VALID_VEC_2(b, out);
+  MAT_REQUIRE_NON_NULL_3(a, b, out);
 
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (a->rows != a->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(a);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   if (a->rows != b->n) {
@@ -1157,7 +1053,7 @@ util_error_t mat_solve_rc(const mat_t* restrict a, const vec_t* restrict b,
   const size_t n = a->rows;
 
   mat_t* lu = NULL;
-  util_error_t rc = mat_alloc_rc(&lu, n, n);
+  rc = mat_alloc_rc(&lu, n, n);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -1206,16 +1102,12 @@ util_error_t mat_solve_rc(const mat_t* restrict a, const vec_t* restrict b,
 }
 
 util_error_t mat_trace_rc(const mat_t* restrict m, double* restrict out) {
-  if (m == NULL || out == NULL) {
-    return ERR_NULL;
-  } 
+  MAT_REQUIRE_NON_NULL_2(m, out);
+  MAT_REQUIRE_VALID_MAT(m);
 
-  if (m->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (m->rows != m->cols) {
-    return ERR_DIM;
+  util_error_t rc = mat_require_square(m);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = m->rows;
@@ -1238,9 +1130,7 @@ util_error_t mat_trace_rc(const mat_t* restrict m, double* restrict out) {
 /* ============================================================ */
 
 util_error_t mat_is_square_rc(const mat_t* restrict m, bool* restrict out) {
-  if (m == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(m, out);
 
   *out = (m->rows == m->cols);
 
@@ -1249,13 +1139,8 @@ util_error_t mat_is_square_rc(const mat_t* restrict m, bool* restrict out) {
 
 util_error_t mat_is_equal_rc(const mat_t* restrict a, const mat_t* restrict b,
                              double epsilon, bool* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_3(a, b, out);
+  MAT_REQUIRE_VALID_MAT_2(a, b);
 
   if (!mat_same_shape(a, b)) {
     *out = false;
@@ -1281,9 +1166,8 @@ util_error_t mat_is_equal_rc(const mat_t* restrict a, const mat_t* restrict b,
 }
 
 util_error_t mat_sum_rc(const mat_t* restrict m, double* restrict out) {
-  if (m == NULL || m->data == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(m, out);
+  MAT_REQUIRE_VALID_MAT(m);
 
   const size_t n = m->rows * m->cols;
   const double* restrict m_data = m->data;
@@ -1299,9 +1183,7 @@ util_error_t mat_sum_rc(const mat_t* restrict m, double* restrict out) {
 }
 
 util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b) {
-  if (a == NULL || b == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(a, b);
 
   if (a == b) {
     return ERR_OK;
@@ -1323,9 +1205,7 @@ util_error_t mat_swap_rc(mat_t* restrict a, mat_t* restrict b) {
 }
 
 util_error_t mat_swap_rows_rc(mat_t* restrict m, size_t row_a, size_t row_b) {
-  if (m == NULL || m->data == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_VALID_MAT(m);
 
   if (row_a >= m->rows || row_b >= m->rows) {
     return ERR_RANGE;
@@ -1350,16 +1230,12 @@ util_error_t mat_swap_rows_rc(mat_t* restrict m, size_t row_a, size_t row_b) {
 }
 
 util_error_t mat_copy_rc(const mat_t* restrict src, mat_t* restrict dest) {
-  if (src == NULL || dest == NULL) {
-    return ERR_NULL;
-  }
+  MAT_REQUIRE_NON_NULL_2(src, dest);
+  MAT_REQUIRE_VALID_MAT_2(src, dest);
 
-  if (src->data == NULL || dest->data == NULL) {
-    return ERR_NULL;
-  }
-
-  if (!mat_same_shape(src, dest)) {
-    return ERR_DIM;
+  util_error_t rc = mat_same_shape(src, dest);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = src->rows * src->cols;

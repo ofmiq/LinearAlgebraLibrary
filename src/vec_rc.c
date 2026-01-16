@@ -8,15 +8,14 @@
 
 #include "config.h"
 #include "util.h"
+#include "vec_internal.h"
 
 /* ============================================================ */
 /*                     Lifecycle Management                     */
 /* ============================================================ */
 
 util_error_t vec_alloc_rc(vec_t** out, size_t n) {
-  if (out == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL(out);
 
   if (n == 0 || n > VECTOR_MAX_ELEMENTS) {
     return ERR_RANGE;
@@ -42,13 +41,7 @@ util_error_t vec_alloc_rc(vec_t** out, size_t n) {
 }
 
 util_error_t vec_from_array_rc(const double* data, vec_t** out, size_t n) {
-  if (out == NULL) {
-    return ERR_NULL;
-  }
-
-  if (data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(data, out);
 
   util_error_t rc = vec_alloc_rc(out, n);
   if (rc != ERR_OK) {
@@ -80,9 +73,8 @@ void vec_freep_rc(vec_t** vp) {
 }
 
 util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
-  if (vp == NULL || *vp == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL(vp);
+  VEC_REQUIRE_VALID_VEC(*vp);
 
   if (new_n == 0 || new_n > VECTOR_MAX_ELEMENTS) {
     return ERR_RANGE;
@@ -119,9 +111,8 @@ util_error_t vec_resize_rc(vec_t** vp, size_t new_n) {
 /* ============================================================ */
 
 util_error_t vec_set_rc(vec_t* v, size_t i, double val) {
-  if (v == NULL || v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
+  
   if (i >= v->n) {
     return ERR_RANGE;
   }
@@ -131,9 +122,9 @@ util_error_t vec_set_rc(vec_t* v, size_t i, double val) {
 }
 
 util_error_t vec_get_rc(const vec_t* v, size_t i, double* out) {
-  if (v == NULL || v->data == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
+  VEC_REQUIRE_NON_NULL(out);
+  
   if (i >= v->n) {
     return ERR_RANGE;
   }
@@ -143,22 +134,16 @@ util_error_t vec_get_rc(const vec_t* v, size_t i, double* out) {
 }
 
 util_error_t vec_size_rc(const vec_t* restrict v, size_t* restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(v, out);
 
   *out = v->n;
   return ERR_OK;
 }
 
 util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
+  VEC_REQUIRE_NON_NULL(out);
 
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
   *out = v->data;
 
   return ERR_OK;
@@ -170,14 +155,17 @@ util_error_t vec_data_rc(const vec_t* restrict v, const double** restrict out) {
 
 util_error_t vec_add_rc(const vec_t* restrict a, const vec_t* restrict b,
                         vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_3(a, b, out);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || a->n != out->n) {
-    return ERR_DIM;
+
+  rc = vec_require_same_size(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -195,14 +183,12 @@ util_error_t vec_add_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_add_inplace_rc(vec_t* restrict dest,
                                 const vec_t* restrict src) {
-  if (dest == NULL || src == NULL) {
-    return ERR_NULL;
-  }
-  if (dest->data == NULL || src->data == NULL) {
-    return ERR_NULL;
-  }
-  if (dest->n != src->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_2(dest, src);
+  VEC_REQUIRE_VALID_VEC_2(dest, src);
+
+  util_error_t rc = vec_require_same_size(dest, src);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = dest->n;
@@ -219,14 +205,17 @@ util_error_t vec_add_inplace_rc(vec_t* restrict dest,
 
 util_error_t vec_subtract_rc(const vec_t* restrict a, const vec_t* restrict b,
                              vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_3(a, b, out);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || a->n != out->n) {
-    return ERR_DIM;
+
+  rc = vec_require_same_size(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -244,14 +233,12 @@ util_error_t vec_subtract_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_subtract_inplace_rc(vec_t* restrict dest,
                                      const vec_t* restrict src) {
-  if (dest == NULL || src == NULL) {
-    return ERR_NULL;
-  }
-  if (dest->data == NULL || src->data == NULL) {
-    return ERR_NULL;
-  }
-  if (dest->n != src->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_2(dest, src);
+  VEC_REQUIRE_VALID_VEC_2(dest, src);
+
+  util_error_t rc = vec_require_same_size(dest, src);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = dest->n;
@@ -267,14 +254,12 @@ util_error_t vec_subtract_inplace_rc(vec_t* restrict dest,
 }
 
 util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (v->n != out->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_2(v, out);
+  VEC_REQUIRE_VALID_VEC_2(v, out);
+
+  util_error_t rc = vec_require_same_size(v, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = v->n;
@@ -295,14 +280,12 @@ util_error_t vec_negate_rc(const vec_t* restrict v, vec_t* restrict out) {
 
 util_error_t vec_scale_rc(const vec_t* restrict a, vec_t* restrict out,
                           double scalar) {
-  if (a == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != out->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_2(a, out);
+  VEC_REQUIRE_VALID_VEC_2(a, out);
+
+  util_error_t rc = vec_require_same_size(a, out);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -318,12 +301,7 @@ util_error_t vec_scale_rc(const vec_t* restrict a, vec_t* restrict out,
 }
 
 util_error_t vec_scale_inplace_rc(vec_t* restrict v, double scalar) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
 
   const size_t n = v->n;
   double* restrict v_data = v->data;
@@ -337,14 +315,12 @@ util_error_t vec_scale_inplace_rc(vec_t* restrict v, double scalar) {
 }
 
 util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y) {
-  if (x == NULL || y == NULL) {
-    return ERR_NULL;
-  }
-  if (x->data == NULL || y->data == NULL) {
-    return ERR_NULL;
-  }
-  if (x->n != y->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_2(x, y);
+  VEC_REQUIRE_VALID_VEC_2(x, y);
+
+  util_error_t rc = vec_require_same_size(x, y);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = x->n;
@@ -361,14 +337,17 @@ util_error_t vec_axpy_rc(double a, const vec_t* restrict x, vec_t* restrict y) {
 
 util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
                              vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_3(a, b, out);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || out->n != a->n) {
-    return ERR_DIM;
+
+  rc = vec_require_same_size(out, a);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -386,14 +365,12 @@ util_error_t vec_multiply_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
                         vec_map_func_t func) {
-  if (src == NULL || dest == NULL || func == NULL) {
-    return ERR_NULL;
-  }
-  if (src->data == NULL || dest->data == NULL) {
-    return ERR_NULL;
-  }
-  if (src->n != dest->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_3(src, dest, func);
+  VEC_REQUIRE_VALID_VEC_2(src, dest);
+
+  util_error_t rc = vec_require_same_size(src, dest);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = src->n;
@@ -412,12 +389,8 @@ util_error_t vec_map_rc(const vec_t* restrict src, vec_t* restrict dest,
 }
 
 util_error_t vec_fill_rc(vec_t* restrict v, double val) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
+
   if (!isfinite(val)) {
     return ERR_INVALID_ARG;
   }
@@ -439,14 +412,12 @@ util_error_t vec_fill_rc(vec_t* restrict v, double val) {
 
 util_error_t vec_dot_rc(const vec_t* restrict a, const vec_t* restrict b,
                         double* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_2(a, b);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -467,14 +438,22 @@ util_error_t vec_dot_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_cross_rc(const vec_t* restrict a, const vec_t* restrict b,
                           vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_3(a, b, out);
+
+  util_error_t rc = vec_require_size(a, 3);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
+
+  rc = vec_require_size(b, 3);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (a->n != 3 || b->n != 3 || out->n != 3) {
-    return ERR_DIM;
+
+  rc = vec_require_size(out, 3);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const double* restrict a_data = a->data;
@@ -494,14 +473,17 @@ util_error_t vec_cross_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_cross_inplace_rc(vec_t* restrict dest,
                                   const vec_t* restrict src) {
-  if (dest == NULL || src == NULL) {
-    return ERR_NULL;
+  VEC_REQUIRE_NON_NULL_2(dest, src);
+  VEC_REQUIRE_VALID_VEC_2(dest, src);
+
+  util_error_t rc = vec_require_size(dest, 3);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (dest->data == NULL || src->data == NULL) {
-    return ERR_NULL;
-  }
-  if (dest->n != 3 || src->n != 3) {
-    return ERR_DIM;
+
+  rc = vec_require_size(src, 3);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   double* restrict dest_data = dest->data;
@@ -522,12 +504,8 @@ util_error_t vec_cross_inplace_rc(vec_t* restrict dest,
 }
 
 util_error_t vec_len_rc(const vec_t* restrict v, double* restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(v, out);
+  VEC_REQUIRE_VALID_VEC(v);
 
   const size_t n = v->n;
   const double* restrict v_data = v->data;
@@ -545,9 +523,7 @@ util_error_t vec_len_rc(const vec_t* restrict v, double* restrict out) {
 }
 
 util_error_t vec_normalize_inplace_rc(vec_t* restrict v) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
 
   double len = 0.0;
   util_error_t rc = vec_len_rc(v, &len);
@@ -566,18 +542,16 @@ util_error_t vec_normalize_inplace_rc(vec_t* restrict v) {
 
 util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
                           double* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_2(a, b);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   double dot = 0.0;
-  util_error_t rc = vec_dot_rc(a, b, &dot);
+  rc = vec_dot_rc(a, b, &dot);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -614,18 +588,21 @@ util_error_t vec_angle_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
                             vec_t* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_3(a, b, out);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
-  if (a->data == NULL || b->data == NULL || out->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n || out->n != b->n) {
-    return ERR_DIM;
+
+  rc = vec_require_same_size(out, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   double dot_ab = 0.0;
-  util_error_t rc = vec_dot_rc(a, b, &dot_ab);
+  rc = vec_dot_rc(a, b, &dot_ab);
   if (rc != ERR_OK) {
     return rc;
   }
@@ -660,14 +637,12 @@ util_error_t vec_project_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
                              double epsilon, bool* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_2(a, b);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -690,14 +665,12 @@ util_error_t vec_is_equal_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_dist_rc(const vec_t* restrict a, const vec_t* restrict b,
                          double* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_2(a, b);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -719,14 +692,12 @@ util_error_t vec_dist_rc(const vec_t* restrict a, const vec_t* restrict b,
 
 util_error_t vec_dist_sq_rc(const vec_t* restrict a, const vec_t* restrict b,
                             double* restrict out) {
-  if (a == NULL || b == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (a->data == NULL || b->data == NULL) {
-    return ERR_NULL;
-  }
-  if (a->n != b->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_3(a, b, out);
+  VEC_REQUIRE_VALID_VEC_2(a, b);
+
+  util_error_t rc = vec_require_same_size(a, b);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = a->n;
@@ -751,12 +722,9 @@ util_error_t vec_dist_sq_rc(const vec_t* restrict a, const vec_t* restrict b,
 /* ============================================================ */
 
 util_error_t vec_min_rc(const vec_t* restrict v, double* restrict out) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(v, out);
+  VEC_REQUIRE_VALID_VEC(v);
+
   if (v->n == 0) {
     return ERR_DIM;
   }
@@ -777,12 +745,9 @@ util_error_t vec_min_rc(const vec_t* restrict v, double* restrict out) {
 }
 
 util_error_t vec_max_rc(const vec_t* restrict v, double* restrict out) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(v, out);
+  VEC_REQUIRE_VALID_VEC(v);
+
   if (v->n == 0) {
     return ERR_DIM;
   }
@@ -803,12 +768,8 @@ util_error_t vec_max_rc(const vec_t* restrict v, double* restrict out) {
 }
 
 util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out) {
-  if (v == NULL || out == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(v, out);
+  VEC_REQUIRE_VALID_VEC(v);
 
   const size_t n = v->n;
   const double* restrict v_data = v->data;
@@ -826,9 +787,7 @@ util_error_t vec_sum_rc(const vec_t* restrict v, double* restrict out) {
 }
 
 util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
-  if (a == NULL || b == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_NON_NULL_2(a, b);
 
   size_t temp_n = a->n;
   a->n = b->n;
@@ -842,14 +801,12 @@ util_error_t vec_swap_rc(vec_t* a, vec_t* b) {
 }
 
 util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest) {
-  if (src == NULL || dest == NULL) {
-    return ERR_NULL;
-  }
-  if (src->data == NULL || dest->data == NULL) {
-    return ERR_NULL;
-  }
-  if (src->n != dest->n) {
-    return ERR_DIM;
+  VEC_REQUIRE_NON_NULL_2(src, dest);
+  VEC_REQUIRE_VALID_VEC_2(src, dest);
+
+  util_error_t rc = vec_require_same_size(src, dest);
+  if (rc != ERR_OK) {
+    return rc;
   }
 
   const size_t n = src->n;
@@ -861,12 +818,8 @@ util_error_t vec_copy_rc(const vec_t* restrict src, vec_t* restrict dest) {
 }
 
 util_error_t vec_print_rc(const vec_t* v) {
-  if (v == NULL) {
-    return ERR_NULL;
-  }
-  if (v->data == NULL) {
-    return ERR_NULL;
-  }
+  VEC_REQUIRE_VALID_VEC(v);
+
   if (v->n == 0) {
     return ERR_OK;
   }
