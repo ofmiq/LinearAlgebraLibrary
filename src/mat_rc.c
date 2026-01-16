@@ -225,6 +225,7 @@ util_error_t mat_set_column(mat_t* restrict m, size_t col,
 
   double* current_ptr = m_data + col;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     *current_ptr = v_data[i];
     current_ptr += cols;
@@ -296,6 +297,7 @@ util_error_t mat_get_column(const mat_t* restrict m, size_t col,
 
   const double* current_src = m_data + col;
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < rows; ++i) {
     v_data[i] = *current_src;
     current_src += stride;
@@ -352,7 +354,8 @@ util_error_t mat_fill_rc(mat_t* restrict m, double val) {
 
   const size_t n = m->rows * m->cols;
   double* restrict m_data = m->data;
-
+  
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     m_data[i] = val;
   }
@@ -381,6 +384,7 @@ util_error_t mat_identity_rc(mat_t* restrict m) {
 
   memset(m->data, 0, m->rows * m->cols * sizeof(double));
 
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < m->rows; ++i) {
     m->data[i * m->cols + i] = 1.0;
   }
@@ -827,6 +831,7 @@ util_error_t mat_lu_decompose_rc(const mat_t* restrict src,
       double multiplier = data[i * cols + k] / pivot;
       data[i * cols + k] = multiplier;
 
+      #pragma omp simd
       for (size_t j = k + 1; j < n; ++j) {
         data[i * cols + j] =
             data[i * cols + j] - multiplier * data[k * cols + j];
@@ -1056,22 +1061,34 @@ util_error_t mat_inverse_rc(const mat_t* restrict m, mat_t* restrict out) {
   double* restrict out_data = out->data;
   const size_t lu_cols = lu->cols;
   
+  #pragma omp parallel for schedule(static)
   for (size_t j = 0; j < n; ++j) {
     for (size_t i = 0; i < n; ++i) {
-      out_data[i * lu_cols + j] = (piv[i] == j) ? 1.0 : 0.0;
+      out_data[j * n + i] = (piv[i] == j) ? 1.0 : 0.0;
     }
 
     for (size_t i = 0; i < n; ++i) {
+      double sum = out_data[j * n + i];
       for (size_t k = 0; k < i; ++k) {
-        out_data[i * lu_cols + j] -= lu_data[i * lu_cols + k] * out_data[k * lu_cols + j];
+        sum -= lu_data[i * lu_cols + k] * out_data[j * n + k];
       }
+      out_data[j * n + i] = sum;
     }
 
     for (size_t i = n; i-- > 0;) {
+      double sum = out_data[j * n + i];
       for (size_t k = i + 1; k < n; ++k) {
-        out_data[i * lu_cols + j] -= lu_data[i * lu_cols + k] * out_data[k * lu_cols + j];
+        sum -= lu_data[i * lu_cols + k] * out_data[j * n + k];
       }
-      out_data[i * lu_cols + j] /= lu_data[i * lu_cols + i];
+      out_data[j * n + i] = sum / lu_data[i * lu_cols + i];
+    }
+  }
+
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t j = i + 1; j < n; ++j) {
+      double tmp = out_data[i * n + j];
+      out_data[i * n + j] = out_data[j * n + i];
+      out_data[j * n + i] = tmp;
     }
   }
 
@@ -1206,6 +1223,7 @@ util_error_t mat_trace_rc(const mat_t* restrict m, double* restrict out) {
   const size_t m_cols = m->cols;
   double trace = 0.0;
 
+  #pragma omp parallel for reduction(+ : trace) schedule(static)
   for (size_t i = 0; i < n; ++i) {
     trace += m_data[i * m_cols + i];
   }
@@ -1248,14 +1266,16 @@ util_error_t mat_is_equal_rc(const mat_t* restrict a, const mat_t* restrict b,
   const double* restrict a_data = a->data;
   const double* restrict b_data = b->data;
 
+  bool equal = true;
+  #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < n; ++i) {
     if (fabs(a_data[i] - b_data[i]) > epsilon) {
-      *out = false;
-      return ERR_OK;
-    }
+      #pragma omp atomic write
+      equal = false;
+      }
   }
-
-  *out = true;
+  
+  *out = equal;
 
   return ERR_OK;
 }
