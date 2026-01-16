@@ -1,7 +1,6 @@
 #include "vec.h"
 
 #include <math.h>
-#include <stdio.h>
 
 #include "config.h"
 #include "vec_rc.h"
