@@ -80,7 +80,7 @@ util_error_t mat_set_rc(mat_t* restrict m, size_t i, size_t j, double val);
  * @param v Pointer to the source vector.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_set_row(mat_t* restrict m, size_t row,
+util_error_t mat_set_row_rc(mat_t* restrict m, size_t row,
                          const vec_t* restrict v);
 
 /**
@@ -90,7 +90,7 @@ util_error_t mat_set_row(mat_t* restrict m, size_t row,
  * @param v Pointer to the source vector.
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_set_column(mat_t* restrict m, size_t col,
+util_error_t mat_set_column_rc(mat_t* restrict m, size_t col,
                             const vec_t* restrict v);
 
 /**
@@ -113,7 +113,7 @@ util_error_t mat_get_rc(const mat_t* restrict m, size_t i, size_t j,
  * @note Arguments 'm' and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_get_row(const mat_t* restrict m, size_t row,
+util_error_t mat_get_row_rc(const mat_t* restrict m, size_t row,
                          vec_t* restrict out);
 
 /**
@@ -124,7 +124,7 @@ util_error_t mat_get_row(const mat_t* restrict m, size_t row,
  * @note Arguments 'm' and 'out' must not overlap (restrict pointers).
  * @return ERR_OK on success, or an error code otherwise.
  */
-util_error_t mat_get_column(const mat_t* restrict m, size_t col,
+util_error_t mat_get_column_rc(const mat_t* restrict m, size_t col,
                             vec_t* restrict out);
 
 /**

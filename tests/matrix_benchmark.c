@@ -86,10 +86,10 @@ int main() {
     dummy += (double)(r_count + c_count);
   }
   for (int i = 0; i < ITER; i++) {
-    mat_get_row(m1, i % ROWS, v_tmp);
-    mat_set_column(m2, i % COLS, v_tmp);
-    mat_get_column(m1, i % COLS, v_tmp);
-    mat_set_row(m2, i % ROWS, v_tmp);
+    mat_get_row_rc(m1, i % ROWS, v_tmp);
+    mat_set_column_rc(m2, i % COLS, v_tmp);
+    mat_get_column_rc(m1, i % COLS, v_tmp);
+    mat_set_row_rc(m2, i % ROWS, v_tmp);
     dummy += v_tmp->data[0];
   }
   printf("[Get/Set/Meta/Vec]  Time: %.4f s\n", get_wall_time() - s);

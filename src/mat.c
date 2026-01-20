@@ -60,7 +60,7 @@ bool mat_resize_inplace(mat_t* m, size_t new_rows, size_t new_cols) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -73,42 +73,42 @@ bool mat_set(mat_t* m, size_t i, size_t j, double val) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
 bool mat_set_row(mat_t* m, size_t row, const vec_t* v) {
-  util_error_t rc = mat_set_row(m, row, v);
+  util_error_t rc = mat_set_row_rc(m, row, v);
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
 bool mat_set_column(mat_t* m, size_t col, const vec_t* v) {
-  util_error_t rc = mat_set_column(m, col, v);
+  util_error_t rc = mat_set_column_rc(m, col, v);
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
 double mat_get(const mat_t* m, size_t i, size_t j) {
   double out = NAN;
-  
+
   util_error_t rc = mat_get_rc(m, i, j, &out);
   if (rc != ERR_OK) {
     return NAN;
   }
-  
+
   return out;
 }
 
 vec_t* mat_get_row(const mat_t* m, size_t row) {
   size_t cols = 0;
-  
+
   if (mat_cols_rc(m, &cols) != ERR_OK) {
     return NULL;
   }
@@ -149,34 +149,34 @@ vec_t* mat_get_column(const mat_t* m, size_t col) {
 
 size_t mat_rows(const mat_t* m) {
   size_t rows = 0;
-  
+
   util_error_t rc = mat_rows_rc(m, &rows);
   if (rc != ERR_OK) {
     return 0;
   }
-  
+
   return rows;
 }
 
 size_t mat_cols(const mat_t* m) {
   size_t cols = 0;
-  
+
   util_error_t rc = mat_cols_rc(m, &cols);
   if (rc != ERR_OK) {
     return 0;
   }
-  
+
   return cols;
 }
 
 const double* mat_data(const mat_t* m) {
   const double* data = NULL;
-  
+
   util_error_t rc = mat_data_rc(m, &data);
   if (rc != ERR_OK) {
     return NULL;
   }
-  
+
   return data;
 }
 
@@ -186,11 +186,11 @@ const double* mat_data(const mat_t* m) {
 
 bool mat_fill(mat_t* m, double val) {
   util_error_t rc = mat_fill_rc(m, val);
-  
+
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -205,7 +205,7 @@ mat_t* mat_zeros(size_t rows, size_t cols) {
     mat_free(m);
     return NULL;
   }
-  
+
   return m;
 }
 
@@ -220,7 +220,7 @@ mat_t* mat_identity(size_t n) {
     mat_free(m);
     return NULL;
   }
-  
+
   return m;
 }
 
@@ -259,7 +259,7 @@ bool mat_add_inplace(mat_t* dest, const mat_t* src) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -294,7 +294,7 @@ bool mat_subtract_inplace(mat_t* dest, const mat_t* src) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -333,7 +333,7 @@ bool mat_scale_inplace(mat_t* dest, double scalar) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -399,8 +399,6 @@ mat_t* mat_multiply_new(const mat_t* a, const mat_t* b) {
   }
 
   size_t rows_a;
-  size_t cols_a; 
-  size_t rows_b; 
   size_t cols_b;
 
   if (mat_rows_rc(a, &rows_a) != ERR_OK || mat_cols_rc(b, &cols_b) != ERR_OK) {
@@ -481,7 +479,7 @@ bool mat_reshape(mat_t* m, size_t new_rows, size_t new_cols) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -520,18 +518,18 @@ bool mat_lu_decompose_inplace(mat_t* a, size_t* piv, int* sign) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
 double mat_det(const mat_t* m) {
   double out = NAN;
-  
+
   util_error_t rc = mat_det_rc(m, &out);
   if (rc != ERR_OK) {
     return NAN;
   }
-  
+
   return out;
 }
 
@@ -566,7 +564,7 @@ bool mat_inverse_inplace(mat_t* m) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -598,12 +596,12 @@ vec_t* mat_solve_new(const mat_t* a, const vec_t* b) {
 
 double mat_trace(const mat_t* m) {
   double out = NAN;
-  
+
   util_error_t rc = mat_trace_rc(m, &out);
   if (rc != ERR_OK) {
     return NAN;
   }
-  
+
   return out;
 }
 
@@ -613,34 +611,34 @@ double mat_trace(const mat_t* m) {
 
 bool mat_is_square(const mat_t* m) {
   bool out = false;
-  
+
   util_error_t rc = mat_is_square_rc(m, &out);
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return out;
 }
 
 bool mat_is_equal(const mat_t* a, const mat_t* b, double epsilon) {
   bool out = false;
-  
+
   util_error_t rc = mat_is_equal_rc(a, b, epsilon, &out);
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return out;
 }
 
 double mat_sum(const mat_t* m) {
   double out = NAN;
-  
+
   util_error_t rc = mat_sum_rc(m, &out);
   if (rc != ERR_OK) {
     return NAN;
   }
-  
+
   return out;
 }
 
@@ -651,7 +649,7 @@ bool mat_swap_rows(mat_t* m, size_t row_a, size_t row_b) {
   if (rc != ERR_OK) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -662,7 +660,7 @@ mat_t* mat_duplicate(const mat_t* src) {
 
   size_t rows;
   size_t cols;
-  
+
   if (mat_rows_rc(src, &rows) != ERR_OK || mat_cols_rc(src, &cols) != ERR_OK) {
     return NULL;
   }
