@@ -5,35 +5,36 @@ CC = gcc
 # Directories
 SRC_DIR = src
 INC_DIR = include
-TEST_DIR = tests
+TEST_DIR_UNIT = tests/unit
+TEST_DIR_BENCH = tests/benchmarks
+EXTERNAL_DIR = external
+UNITY_DIR = $(EXTERNAL_DIR)/unity
 BUILD_DIR = build
 BIN_DIR = bin
 
 # Sources
-LIB_SOURCES = $(filter-out $(SRC_DIR)/main.c, $(wildcard $(SRC_DIR)/*.c))
-LIB_OBJECTS = $(LIB_SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
+LIB_SOURCES = $(filter-out $(SRC_DIR)/main.c, $(wildcard $(SRC_DIR)/*.c) $(wildcard $(SRC_DIR)/*/*.c))
+LIB_OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(LIB_SOURCES))
 
-# Benchmark utilities
-BENCH_UTILS = $(TEST_DIR)/benchmark_utils.c
-BENCH_UTILS_OBJ = $(BUILD_DIR)/benchmark_utils.o
+# Benchmark sources
+BENCH_UTILS_SRC = $(TEST_DIR_BENCH)/benchmark_utils.c
+TEST_VECTOR_SRC = $(TEST_DIR_BENCH)/vector_benchmark.c
+TEST_MATRIX_SRC = $(TEST_DIR_BENCH)/matrix_benchmark.c
 
-# Test sources
-TEST_VECTOR = $(TEST_DIR)/vector_benchmark.c
-TEST_MATRIX = $(TEST_DIR)/matrix_benchmark.c
+BENCH_UTILS_OBJ = $(patsubst $(TEST_DIR_BENCH)/%.c,$(BUILD_DIR)/bench_%.o,$(BENCH_UTILS_SRC))
+TEST_VECTOR_OBJ = $(patsubst $(TEST_DIR_BENCH)/%.c,$(BUILD_DIR)/bench_%.o,$(TEST_VECTOR_SRC))
+TEST_MATRIX_OBJ = $(patsubst $(TEST_DIR_BENCH)/%.c,$(BUILD_DIR)/bench_%.o,$(TEST_MATRIX_SRC))
 
-TEST_VECTOR_OBJ = $(BUILD_DIR)/test_vector_benchmark.o
-TEST_MATRIX_OBJ = $(BUILD_DIR)/test_matrix_benchmark.o
-
-# Unity test framework
-UNITY_SRC = $(TEST_DIR)/unity.c
+# Unity (external)
+UNITY_SRC = $(UNITY_DIR)/unity.c
 UNITY_OBJ = $(BUILD_DIR)/unity.o
 
-# Unit test sources
-UNIT_TEST_VEC = $(TEST_DIR)/test_vec_rc.c
-UNIT_TEST_VEC_OBJ = $(BUILD_DIR)/test_vec_rc.o
+# Unit tests
+UNIT_TEST_VEC_SRC = $(TEST_DIR_UNIT)/test_vec_rc.c
+UNIT_TEST_VEC_WRAPPER_SRC = $(TEST_DIR_UNIT)/test_vec.c
 
-UNIT_TEST_VEC_WRAPPER = $(TEST_DIR)/test_vec.c
-UNIT_TEST_VEC_WRAPPER_OBJ = $(BUILD_DIR)/test_vec.o
+UNIT_TEST_VEC_OBJ = $(patsubst $(TEST_DIR_UNIT)/%.c,$(BUILD_DIR)/unit_%.o,$(UNIT_TEST_VEC_SRC))
+UNIT_TEST_VEC_WRAPPER_OBJ = $(patsubst $(TEST_DIR_UNIT)/%.c,$(BUILD_DIR)/unit_%.o,$(UNIT_TEST_VEC_WRAPPER_SRC))
 
 # Targets
 TARGET_VECTOR_BENCH = $(BIN_DIR)/vector_bench
@@ -45,8 +46,7 @@ TARGET_UNIT_TEST_VEC_WRAPPER = $(BIN_DIR)/test_vec
 # FLAGS
 # ============================================================================
 
-CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(TEST_DIR) -fopenmp
-
+CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -I$(TEST_DIR_UNIT) -I$(TEST_DIR_BENCH) -I$(UNITY_DIR) -fopenmp
 CFLAGS += -O3 -march=native -mtune=native -flto \
           -fno-math-errno -fomit-frame-pointer -fno-plt -pipe
 
@@ -62,7 +62,7 @@ LDFLAGS = -lm -flto -fopenmp
 all: CFLAGS += -DNDEBUG
 all: $(TARGET_VECTOR_BENCH) $(TARGET_MATRIX_BENCH)
 
-debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(TEST_DIR) -fopenmp
+debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -I$(TEST_DIR_UNIT) -I$(TEST_DIR_BENCH) -I$(UNITY_DIR) -fopenmp
 debug: CFLAGS += -O0 -g -ggdb3 -fsanitize=address -fsanitize=undefined -fsanitize=leak
 debug: CFLAGS += -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-12
 debug: CFLAGS += -DUNITY_SUPPORT_64 -DUNITY_INCLUDE_FLOAT
@@ -77,11 +77,7 @@ release: $(TARGET_VECTOR_BENCH) $(TARGET_MATRIX_BENCH)
 # Unit Tests
 # ============================================================================
 
-# ============================================================================
-# Unit Tests
-# ============================================================================
-
-test: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(TEST_DIR) -fopenmp
+test: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -I$(TEST_DIR_UNIT) -I$(TEST_DIR_BENCH) -I$(UNITY_DIR) -fopenmp
 test: CFLAGS += -O2
 test: CFLAGS += -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-12
 test: CFLAGS += -DUNITY_SUPPORT_64 -DUNITY_INCLUDE_FLOAT
@@ -97,7 +93,7 @@ test: clean $(TARGET_UNIT_TEST_VEC) $(TARGET_UNIT_TEST_VEC_WRAPPER)
 	@echo "========================================="
 	@./$(TARGET_UNIT_TEST_VEC_WRAPPER)
 
-test-debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(TEST_DIR) -fopenmp
+test-debug: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -I$(TEST_DIR_UNIT) -I$(TEST_DIR_BENCH) -I$(UNITY_DIR) -fopenmp
 test-debug: CFLAGS += -O0 -g -ggdb3 -fsanitize=address -fsanitize=undefined -fsanitize=leak
 test-debug: CFLAGS += -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-12
 test-debug: CFLAGS += -DUNITY_SUPPORT_64 -DUNITY_INCLUDE_FLOAT
@@ -112,7 +108,7 @@ test-debug: clean $(TARGET_UNIT_TEST_VEC) $(TARGET_UNIT_TEST_VEC_WRAPPER)
 	@echo "--- vec wrapper module ---"
 	@./$(TARGET_UNIT_TEST_VEC_WRAPPER)
 
-test-valgrind: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(TEST_DIR) -fopenmp
+test-valgrind: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -I$(TEST_DIR_UNIT) -I$(TEST_DIR_BENCH) -I$(UNITY_DIR) -fopenmp
 test-valgrind: CFLAGS += -O0 -g -ggdb3
 test-valgrind: CFLAGS += -DUNITY_INCLUDE_DOUBLE -DUNITY_DOUBLE_PRECISION=1e-12
 test-valgrind: CFLAGS += -DUNITY_SUPPORT_64 -DUNITY_INCLUDE_FLOAT
@@ -132,6 +128,7 @@ test-valgrind: clean $(TARGET_UNIT_TEST_VEC) $(TARGET_UNIT_TEST_VEC_WRAPPER)
 # ============================================================================
 # Run Targets
 # ============================================================================
+
 run-vector: $(TARGET_VECTOR_BENCH)
 	@echo "Running vector benchmark..."
 	@./$(TARGET_VECTOR_BENCH)
@@ -161,13 +158,13 @@ benchmark: all
 		./$(TARGET_MATRIX_BENCH) | tail -10; \
 	done
 
-profile-vector: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -fopenmp
+profile-vector: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -fopenmp
 profile-vector: CFLAGS += -O2 -pg
 profile-vector: LDFLAGS = -lm -fopenmp -pg
 profile-vector: clean $(TARGET_VECTOR_BENCH)
 	@echo "Run './$(TARGET_VECTOR_BENCH)' then 'gprof $(TARGET_VECTOR_BENCH) gmon.out'"
 
-profile-matrix: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -fopenmp
+profile-matrix: CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -I$(INC_DIR) -I$(SRC_DIR) -fopenmp
 profile-matrix: CFLAGS += -O2 -pg
 profile-matrix: LDFLAGS = -lm -fopenmp -pg
 profile-matrix: clean $(TARGET_MATRIX_BENCH)
@@ -183,48 +180,38 @@ $(BUILD_DIR):
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-# Vector benchmark executable
+# Link Vector benchmark
 $(TARGET_VECTOR_BENCH): $(LIB_OBJECTS) $(BENCH_UTILS_OBJ) $(TEST_VECTOR_OBJ) | $(BIN_DIR)
 	$(CC) $(LIB_OBJECTS) $(BENCH_UTILS_OBJ) $(TEST_VECTOR_OBJ) $(LDFLAGS) -o $@
 
-# Matrix benchmark executable
+# Link Matrix benchmark
 $(TARGET_MATRIX_BENCH): $(LIB_OBJECTS) $(BENCH_UTILS_OBJ) $(TEST_MATRIX_OBJ) | $(BIN_DIR)
 	$(CC) $(LIB_OBJECTS) $(BENCH_UTILS_OBJ) $(TEST_MATRIX_OBJ) $(LDFLAGS) -o $@
 
-# Unit test executable for vec_rc
+# Link unit tests
 $(TARGET_UNIT_TEST_VEC): $(LIB_OBJECTS) $(UNITY_OBJ) $(UNIT_TEST_VEC_OBJ) | $(BIN_DIR)
 	$(CC) $(LIB_OBJECTS) $(UNITY_OBJ) $(UNIT_TEST_VEC_OBJ) $(LDFLAGS) -o $@
 
-# Unit test executable for vec wrapper
 $(TARGET_UNIT_TEST_VEC_WRAPPER): $(LIB_OBJECTS) $(UNITY_OBJ) $(UNIT_TEST_VEC_WRAPPER_OBJ) | $(BIN_DIR)
 	$(CC) $(LIB_OBJECTS) $(UNITY_OBJ) $(UNIT_TEST_VEC_WRAPPER_OBJ) $(LDFLAGS) -o $@
 
 # Compile library sources
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile benchmark utilities
-$(BUILD_DIR)/benchmark_utils.o: $(TEST_DIR)/benchmark_utils.c | $(BUILD_DIR)
+# Compile benchmark/test sources
+$(BUILD_DIR)/bench_%.o: $(TEST_DIR_BENCH)/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile vector benchmark
-$(BUILD_DIR)/test_vector_benchmark.o: $(TEST_DIR)/vector_benchmark.c | $(BUILD_DIR)
+$(BUILD_DIR)/unit_%.o: $(TEST_DIR_UNIT)/%.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile matrix benchmark
-$(BUILD_DIR)/test_matrix_benchmark.o: $(TEST_DIR)/matrix_benchmark.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Compile Unity framework
-$(BUILD_DIR)/unity.o: $(TEST_DIR)/unity.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Compile unit test for vec_rc
-$(BUILD_DIR)/test_vec_rc.o: $(TEST_DIR)/test_vec_rc.c | $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Compile unit test for vec wrapper
-$(BUILD_DIR)/test_vec.o: $(TEST_DIR)/test_vec.c | $(BUILD_DIR)
+# Compile Unity
+$(UNITY_OBJ): $(UNITY_SRC) | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ============================================================================
@@ -235,4 +222,4 @@ clean:
 	rm -rf $(BUILD_DIR) $(BIN_DIR) gmon.out
 
 .PHONY: all debug release clean run-vector run-matrix run-all benchmark \
-        profile-vector profile-matrix test test-debug test-valgrind
+	profile-vector profile-matrix test test-debug test-valgrind

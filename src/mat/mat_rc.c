@@ -7,7 +7,7 @@
 
 #include "config.h"
 #include "mat_internal.h"
-#include "vec_internal.h"
+#include "vec/vec_internal.h"
 
 /* ============================================================ */
 /*                      Lifecycle Management                    */
